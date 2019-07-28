@@ -1,7 +1,7 @@
 <#
 .Synopsis
-	Update-Windows is a cmdlet created to update Windows when updates are available. This cmdlet also creates logs of update attempts
-	System Administrators will be alerted if updates fail. 
+    Update-Windows is a cmdlet created to update Windows when updates are available. This cmdlet also creates logs of update attempts
+    System Administrators will be alerted if updates fail. 
 
 .DESCRIPTION
     This cmdlet updates windows, logs results, and alerts administrators of failures.
@@ -9,8 +9,8 @@
 .NOTES
     Author: Rob Osborne
     Alias: tobor
-	Contact: rosborne@osbornepro.com
-	https://roberthosborne.com
+    Contact: rosborne@osbornepro.com
+    https://roberthosborne.com
 
 .EXAMPLE
    Update-Windows
@@ -33,8 +33,8 @@ Function Update-Windows
 			
 	} # End If
         
-    $SmtpServer = "smtp2go.com"
-    $EmailAddress = "AdminEmail@osbornepro.com"
+        $SmtpServer = "smtp2go.com"
+        $EmailAddress = "AdminEmail@osbornepro.com"
 	$Today = Get-Date
 	$FormattedDate = Get-Date -Format MM.dd.yyyy
 	$ComputerName = $env:COMPUTERNAME
@@ -199,7 +199,7 @@ Function Update-Windows
 
 			Send-MailMessage -To $EmailAddress -From $EmailAddress -SmtpServer $SmtpServer -Subject "Windows Update Installation Failure: $ComputerName" -Body $InstallError -Priority High
 		
-			Import-Module -Function "Repair-UpdateFailure"
+			Import-Module "Repair-UpdateFailure" # This won't work unless Repair-UpadteFailure.psm1 is in one of the $env:PSModulePath directories.
 
 			Repair-UpdateFailure
 
