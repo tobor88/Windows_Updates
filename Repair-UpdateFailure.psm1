@@ -1,7 +1,7 @@
 ﻿<#
 .Synopsis
-	Repair-UpdateFailure is a cmdlet created to run Windows Update Troubleshooting steps through a PowerShell Command.
-	This works best used with Task Scheduler or inside a Windows Update PowerShell script.
+    Repair-UpdateFailure is a cmdlet created to run Windows Update Troubleshooting steps through a PowerShell Command.
+    This works best used with Task Scheduler or inside a Windows Update PowerShell script.
 
 .DESCRIPTION
     Repair-UpdateFailure is a cmdlet created to run Windows Update Troubleshooting steps through a PowerShell Command.
@@ -10,7 +10,7 @@
     Author: Ryan Nemeth
     Contributor: Rob Osborne
     Alias: tobor
-	Contact: rosborne@osbornepro.com
+    Contact: rosborne@osbornepro.com
     https://roberthosborne.com
     
 .RELATED LINKS
