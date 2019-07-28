@@ -1,0 +1,40 @@
+#===================================================================#
+#                            Update Report                          #
+#===================================================================#
+
+Computer Hostname : DESKTOP
+
+Creation Date     : 07/27/2019 22:24:00
+Report Directory  : C:\Windows\Temp\DESKTOP
+
+---------------------------------------------------------------------
+AVAILABLE UPDATES
+---------------------------------------------------------------------
+1.) Microsoft Silverlight (KB4481252)
+2.) Definition Update for Windows Defender Antivirus - KB2267602 (Definition 1.299.668.0)
+
+---------------------------------------------------------------------
+INITIALISING UPDATE DOWNLOADS
+---------------------------------------------------------------------
+
+1.) Downloading Update: Microsoft Silverlight (KB4481252) 
+	Download Status: FAILED With Error 
+		 Cannot create a file when that file already exists
+
+2.) Downloading Update: Definition Update for Windows Defender Antivirus - KB2267602 (Definition 1.299.668.0) 
+	Download Status: FAILED With Error 
+		 A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond 207.46.163.74:25
+
+---------------------------------------------------------------------
+UPDATE INSTALLATION
+---------------------------------------------------------------------
+
+1.) Installing Update: Microsoft Silverlight (KB4481252) 
+    - Update Installation Status: SUCCESS
+
+2.) Installing Update: Definition Update for Windows Defender Antivirus - KB2267602 (Definition 1.299.668.0) 
+    - Update Installation Status: SUCCESS
+
+#===================================================================#
+#                         END OF REPORT                             #
+#===================================================================#
