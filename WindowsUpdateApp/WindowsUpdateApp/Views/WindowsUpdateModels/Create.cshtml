@@ -1,0 +1,53 @@
+﻿@model WindowsUpdateTracker.Models.WindowsUpdateModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>WindowsUpdateModel</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="UpdateTitle" class="control-label"></label>
+                <input asp-for="UpdateTitle" class="form-control" />
+                <span asp-validation-for="UpdateTitle" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="HostName" class="control-label"></label>
+                <input asp-for="HostName" class="form-control" />
+                <span asp-validation-for="HostName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Date" class="control-label"></label>
+                <input asp-for="Date" class="form-control" />
+                <span asp-validation-for="Date" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="DownloadStatus" class="control-label"></label>
+                <input asp-for="DownloadStatus" class="form-control" />
+                <span asp-validation-for="DownloadStatus" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="InstallStatus" class="control-label"></label>
+                <input asp-for="InstallStatus" class="form-control" />
+                <span asp-validation-for="InstallStatus" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
