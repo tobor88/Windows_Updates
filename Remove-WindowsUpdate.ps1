@@ -40,6 +40,15 @@
         Accept pipeline input?       true (By Property Name)
         Accept wildcard characters?  false
 
+    -Restart [<SwitchParameter>]
+        Specifies whether or not the remote computer should be restarted after the patch is removed.
+
+        Required?                    false
+        Position?                    none
+        Default value                off
+        Accept pipeline input?       false
+        Accept wildcard characters?  false
+
     <CommonParameters>
         This cmdlet supports the common parameters: Verbose, Debug,
         ErrorAction, ErrorVariable, WarningAction, WarningVariable,
@@ -57,8 +66,8 @@
     This examples also uninstalls HotFix KB4556799 from the local computer.
 
     -------------------------- EXAMPLE 3 --------------------------
-    Remove-WindowsUpdate -HotFixID "KB4556799" -ComputerName 10.10.10.120
-    This examples uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120.
+    Remove-WindowsUpdate -HotFixID "KB4556799" -ComputerName 10.10.10.120 -Restart
+    This examples uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120 and if a restart is needed allows it to restart.
 
     -------------------------- EXAMPLE 4 --------------------------
     Remove-WindowsUpdate "KB4556799" 10.10.10.120
@@ -108,7 +117,12 @@ Function Remove-WindowsUpdate {
                 ValueFromPipelineByPropertyName=$True,
                 HelpMessage="Enter the name or names of the remote compute you wish to uninstall. Separate multiple values with a comma. `nExample: 'Comp1.domain.com','Comp2','10.10.10.123'`n")]  # End Paramater
             [ValidateNotNullOrEmpty()]
-            [String[]]$ComputerName
+            [String[]]$ComputerName,
+
+            [Parameter(
+                Mandatory=$False
+            [switch][bool]$Restart
+                )]
             )  # End param
 
 BEGIN
@@ -201,18 +215,18 @@ PROCESS
 
                             Write-Output "[*] $HotFix is installed on $C, continuing uninstallation"
                             $KBNumber = $Patch.HotfixId.Replace("KB", "")
-                            $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\cmd.exe -Verb RunAs -ArgumentList { /c wusa.exe /uninstall /kb:$KBNumber /quiet /log /norestart }"
+                            $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}"
 
                             Write-Output ("[*] Removing update with command: " + $RemovalCommand)
 
-                            Invoke-Expression -Command $RemovalCommand
+                            Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
 
                             While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
                             {
 
-                                Start-Sleep -Seconds 3
+                                Start-Sleep -Seconds 10
 
-                                Write-Host "Waiting for update removal to finish ..."
+                                Write-Host "Waiting for update removal to finish. Please wait..."
 
                             }  # End While
 
@@ -255,18 +269,18 @@ PROCESS
 
                 $KBNumber = $Patch.HotfixId.Replace("KB", "")
 
-                $RemovalCommand = "wusa.exe /uninstall /kb:$KBNumber /quiet /log /norestart"
+                $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}"
 
                 Write-Verbose ("[*] Removing update with command: " + $RemovalCommand)
 
-                Invoke-Expression -Command "$RemovalCommand"
+                Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
 
                 While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
                 {
 
-                    Start-Sleep -Seconds 3
+                    Start-Sleep -Seconds 10
 
-                    Write-Output "[*] Waiting for update removal to finish ..."
+                    Write-Output "[*] Waiting for update removal to finish. Please wait..."
 
                 }  # End While
 
