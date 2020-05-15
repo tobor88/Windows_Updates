@@ -213,7 +213,7 @@ PROCESS
                         {
 
                             Write-Output "[*] $HotFix is installed on $C, continuing uninstallation"
-                            $KBNumber = $Patch.HotfixId.Replace("KB", "")
+                            $KBNumber = $Patch.HotfixId.Replace("KB", "") | Out-String
                             $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}"
 
                             Write-Output ("[*] Removing update with command: " + $RemovalCommand)
@@ -221,13 +221,15 @@ PROCESS
                             If ($Restart.IsPresent)
                             {
 
-                                Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+                                Write-Output "[*] Restart switch parameter is defined. You will be prompted to restart."
+
+                                cmd /c wusa /uninstall /kb:$KBNumber /promptrestart
 
                             }  # End If
                             Else
                             {
 
-                                Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+                                cmd /c wusa /uninstall /kb:$KBNumber /norestart
 
                             }  # End Else
 
@@ -277,8 +279,7 @@ PROCESS
             Else
             {
 
-                $KBNumber = $Patch.HotfixId.Replace("KB", "")
-
+                $KBNumber = $Patch.HotfixId.Replace("KB", "") | Out-String
                 $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}"
 
                 Write-Verbose ("[*] Removing update with command: " + $RemovalCommand)
@@ -286,13 +287,15 @@ PROCESS
                 If ($Restart.IsPresent)
                 {
 
-                    Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log}
+                    Write-Output "[*] Restart switch parameter is defined. You will be prompted to restart."
+
+                    cmd /c wusa /uninstall /kb:$KBNumber /norestart
 
                 }  # End If
                 Else
                 {
 
-                    Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+                    cmd /c wusa /uninstall /kb:$KBNumber /norestart
 
                 }  # End Else
 
