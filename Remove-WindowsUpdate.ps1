@@ -270,6 +270,8 @@ PROCESS
 
                 }  # End While
 
+                Write-Output "[*] Update removal has completed"
+
             }  # End Else
 
         }  # End ForEach
