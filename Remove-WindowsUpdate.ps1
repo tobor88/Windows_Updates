@@ -57,11 +57,11 @@
     This examples also uninstalls HotFix KB4556799 from the local computer.
 
     -------------------------- EXAMPLE 3 --------------------------
-    Remove-WindowsUpdate -KB "KB4556799" -ComputerName 10.10.10.120
+    Remove-WindowsUpdate -HotFixID "KB4556799" -ComputerName 10.10.10.120
     This examples uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120.
 
     -------------------------- EXAMPLE 4 --------------------------
-    Remove-WindowsUpdate -ID "KB4556799" 10.10.10.120
+    Remove-WindowsUpdate "KB4556799" 10.10.10.120
     This examples also uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120.
 
 
@@ -99,7 +99,6 @@ Function Remove-WindowsUpdate {
                 Position=0,
                 ValueFromPipeline=$False,
                 HelpMessage="Enter the Windows Update KB number(s) you wish to uninstall. Separate multiple values with a comma.`nExample: KB4556799','KB4556798' (4556799 is also acceptable) `n")]  # End Paramater
-            [Alias("KB","ID")]
             [String[]]$HotFixID,
 
             [Parameter(
@@ -172,21 +171,27 @@ PROCESS
             ForEach ($C in $ComputerName)
             {
 
-                Write-Verbose "Begining removal of update(s) from $C"
+                Write-Verbose "[*] Starting connection to $C"
 
-                Invoke-Command -Session (Get-Variable -Name "Session$n").Value -ScriptBlock {
+                Invoke-Command -Session (Get-Variable -Name "Session$n").Value -ArgumentList $HotFixID -ScriptBlock {
+                    param([array]$HotFixID)
 
-                    Write-Verbose "Getting list of installed patches"
+                    Write-Output "[*] Getting list of installed patches"
 
                     $PatchList = Get-CimInstance -ClassName "Win32_QuickFixEngineering" -Namespace "root\cimv2"
 
                     ForEach ($HotFix in $HotFixID)
                     {
 
-                        If (!($PatchList | Where-Object { $_.HotFixID -like $HotFix } ))
+                        $Patch = $PatchList | Where-Object { $_.HotFixID -like "$HotFix" }
+
+                        Write-Output "[*] $Patch will be removed from $C"
+
+                        If (!($Patch))
                         {
 
-                            Write-Output "The Windows Update KB number you defined is not installed on $C. Below is a table of installed patches: "
+                            Write-Output "[!] The Windows Update KB number you defined is not installed on $C. Below is a table of installed patches: "
+                            Remove-Variable -Name "Patch"
 
                             $PatchList
 
@@ -194,17 +199,18 @@ PROCESS
                         Else
                         {
 
-                            $KBNumber = $Hotfix.Replace("KB", "");
-                            $RemovalCommand = 'Start-Process -FilePath "C:\Windows\System32\cmd.exe" -Verb RunAs -ArgumentList {/c wusa.exe /uninstall /kb:$HotFix /quiet /log /norestart}'
+                            Write-Output "[*] $HotFix is installed on $C, continuing uninstallation"
+                            $KBNumber = $Patch.HotfixId.Replace("KB", "")
+                            $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\cmd.exe -Verb RunAs -ArgumentList { /c wusa.exe /uninstall /kb:$KBNumber /quiet /log /norestart }"
 
-                            Write-Verbose ("Removing update with command: " + $RemovalCommand);
+                            Write-Output ("[*] Removing update with command: " + $RemovalCommand)
 
-                            Invoke-Expression -Command $RemovalCommand;
+                            Invoke-Expression -Command $RemovalCommand
 
                             While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
                             {
 
-                                Start-Sleep -Seconds 1
+                                Start-Sleep -Seconds 3
 
                                 Write-Host "Waiting for update removal to finish ..."
 
@@ -216,7 +222,7 @@ PROCESS
 
                 }  # End Invoke-Command
 
-                Write-Verbose "Finished removing updates from $C"
+                Write-Verbose "[*] Finished removing updates from $C"
 
             }  # End ForEach
 
@@ -226,17 +232,20 @@ PROCESS
     Else
     {
 
-        Write-Verbose "Getting list of installed patches on $env:COMPUTERNAME"
+        Write-Verbose "[*] Getting list of installed patches on $env:COMPUTERNAME"
 
         $PatchList = Get-CimInstance -ClassName "Win32_QuickFixEngineering" -Namespace "root\cimv2"
 
         ForEach ($HotFix in $HotFixID)
         {
 
-            If (!($PatchList | Where-Object { $_.HotFixID -like $HotFix } ))
+            $Patch = $PatchList | Where-Object { $_.HotFixID -like "$HotFix" }
+
+            If (!($Patch))
             {
 
-                Write-Output "The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
+                Write-Output "[!] The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
+                Remove-Variable -Name "Patch"
 
                 $PatchList
 
@@ -244,19 +253,20 @@ PROCESS
             Else
             {
 
-                $KBNumber = $Hotfix.Replace("KB", "");
-                $RemovalCommand = "wusa.exe /uninstall /kb:$HotFix /quiet /log /norestart";
+                $KBNumber = $Patch.HotfixId.Replace("KB", "")
 
-                Write-Verbose ("Removing update with command: " + $RemovalCommand);
+                $RemovalCommand = "wusa.exe /uninstall /kb:$KBNumber /quiet /log /norestart"
 
-                Invoke-Expression -Command "$RemovalCommand";
+                Write-Verbose ("[*] Removing update with command: " + $RemovalCommand)
+
+                Invoke-Expression -Command "$RemovalCommand"
 
                 While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
                 {
 
-                    Start-Sleep -Seconds 1
+                    Start-Sleep -Seconds 3
 
-                    Write-Output "Waiting for update removal to finish ..."
+                    Write-Output "[*] Waiting for update removal to finish ..."
 
                 }  # End While
 
@@ -270,12 +280,12 @@ PROCESS
 END
 {
 
-    If (Get-PsSession | Out-Null)
+    If (Get-PsSession)
     {
 
         Write-Verbose "[*] Closing connection to remote computers."
 
-        Remove-PsSession -Name *
+        Remove-PsSession *
 
     }  # End If
 
