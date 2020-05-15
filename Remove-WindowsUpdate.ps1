@@ -128,7 +128,7 @@ BEGIN
                 If (Test-Connection -ComputerName $Computer -Quiet -ErrorAction Inquire)
                 {
 
-                    Write-Verbose "$Computer is reachable"
+                    Write-Verbose "[*] $Computer is reachable"
                     Try
                     {
 
