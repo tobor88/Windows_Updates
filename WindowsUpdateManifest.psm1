@@ -731,4 +731,4 @@ Function Export-DataToSql {
 # Export-ModuleMember -Variable $WindowsUpdateSqlConnection
 
 # Create Module Manifest 
-# New-ModuleManifest -Path C:\Users\rob.osborne\Documents\WindowsUpdateModuleManifest.psd1 -Author 'Rob Osborne' -CompanyName 'OsbornePro' -RootModule 'C:\Users\rob.osborne\Documents\WindowsUpdateManifest.psm1' -ModuleVersion '1.0' -Description 'Functions used for the Windows Update Application' -PowerShellVersion '3.0' -FunctionsToExport 'Update-Windows', 'Remove-WindowsUpdate', 'New-WindowsUpdateSqlTable', 'Export-DataToSql' -ProcessorArchitecture None
+# New-ModuleManifest -Path .\WindowsUpdateManifest.psd1 -Author 'Rob Osborne' -CompanyName 'OsbornePro' -RootModule '.\WindowsUpdateManifest.psm1' -ModuleVersion '1.0' -Description 'Functions used for the Windows Update Application' -PowerShellVersion '3.0' -FunctionsToExport 'Update-Windows', 'Remove-WindowsUpdate', 'New-WindowsUpdateSqlTable', 'Export-DataToSql' -ProcessorArchitecture None
