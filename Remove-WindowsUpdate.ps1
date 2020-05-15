@@ -186,7 +186,7 @@ PROCESS
                         If (!($PatchList | Where-Object { $_.HotFixID -like $HotFix } ))
                         {
 
-                            Write-Output "The Windows Update KB number you defined is not installed. Below is a table of installed patches: "
+                            Write-Output "The Windows Update KB number you defined is not installed on $C. Below is a table of installed patches: "
 
                             $PatchList
 
@@ -236,7 +236,7 @@ PROCESS
             If (!($PatchList | Where-Object { $_.HotFixID -like $HotFix } ))
             {
 
-                Write-Output "The Windows Update KB number you defined is not installed. Below is a table of installed patches: "
+                Write-Output "The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
 
                 $PatchList
 
