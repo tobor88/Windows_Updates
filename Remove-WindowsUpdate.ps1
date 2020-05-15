@@ -120,10 +120,9 @@ Function Remove-WindowsUpdate {
             [String[]]$ComputerName,
 
             [Parameter(
-                Mandatory=$False
+                Mandatory=$False)]
             [switch][bool]$Restart
-                )]
-            )  # End param
+        )  # End param
 
 BEGIN
 {
@@ -219,7 +218,18 @@ PROCESS
 
                             Write-Output ("[*] Removing update with command: " + $RemovalCommand)
 
-                            Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+                            If ($Restart.IsPresent)
+                            {
+
+                                Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+
+                            }  # End If
+                            Else
+                            {
+
+                                Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+
+                            }  # End Else
 
                             While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
                             {
@@ -273,7 +283,18 @@ PROCESS
 
                 Write-Verbose ("[*] Removing update with command: " + $RemovalCommand)
 
-                Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+                If ($Restart.IsPresent)
+                {
+
+                    Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log}
+
+                }  # End If
+                Else
+                {
+
+                    Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}
+
+                }  # End Else
 
                 While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
                 {
