@@ -183,7 +183,7 @@ PROCESS
                     ForEach ($HotFix in $HotFixID)
                     {
 
-                        If (!(Where-Object -InputObject $HotFix -Property "HotFixID" -like $HotFix))
+                        If (!($PatchList | Where-Object { $_.HotFixID -like $HotFix } ))
                         {
 
                             Write-Output "The Windows Update KB number you defined is not installed. Below is a table of installed patches: "
@@ -194,8 +194,8 @@ PROCESS
                         Else
                         {
 
-                            #$KBNumber = $Patch.HotfixId.Replace("KB", "");
-                            $RemovalCommand = "wusa.exe /uninstall /kb:$HotFixID /quiet /log /norestart";
+                            $KBNumber = $Hotfix.Replace("KB", "");
+                            $RemovalCommand = "wusa.exe /uninstall /kb:$HotFix /quiet /log /norestart";
 
                             Write-Verbose ("Removing update with command: " + $RemovalCommand);
 
@@ -205,6 +205,7 @@ PROCESS
                             {
 
                                 Start-Sleep -Seconds 1
+
                                 Write-Host "Waiting for update removal to finish ..."
 
                             }  # End While
@@ -232,7 +233,7 @@ PROCESS
         ForEach ($HotFix in $HotFixID)
         {
 
-            If (!(Where-Object -InputObject $HotFix -Property "HotFixID" -like $HotFix))
+            If (!($PatchList | Where-Object { $_.HotFixID -like $HotFix } ))
             {
 
                 Write-Output "The Windows Update KB number you defined is not installed. Below is a table of installed patches: "
@@ -243,8 +244,8 @@ PROCESS
             Else
             {
 
-                #$KBNumber = $Patch.HotfixId.Replace("KB", "");
-                $RemovalCommand = "wusa.exe /uninstall /kb:$HotFixID /quiet /log /norestart";
+                $KBNumber = $Hotfix.Replace("KB", "");
+                $RemovalCommand = "wusa.exe /uninstall /kb:$HotFix /quiet /log /norestart";
 
                 Write-Verbose ("Removing update with command: " + $RemovalCommand);
 
