@@ -198,12 +198,12 @@ PROCESS
 
                         $Patch = $PatchList | Where-Object { $_.HotFixID -like "$HotFix" }
 
-                        Write-Output "[*] $Patch will be removed from $C"
+                        Write-Output "[*] $Patch will be removed from $env:COMPUTERNAME"
 
                         If (!($Patch))
                         {
 
-                            Write-Output "[!] The Windows Update KB number you defined is not installed on $C. Below is a table of installed patches: "
+                            Write-Output "[!] The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
                             Remove-Variable -Name "Patch"
 
                             $PatchList
@@ -212,24 +212,21 @@ PROCESS
                         Else
                         {
 
-                            Write-Output "[*] $HotFix is installed on $C, continuing uninstallation"
+                            Write-Output "[*] $HotFix is installed on $env:COMPUTERNAME, continuing uninstallation"
                             $KBNumber = $Patch.HotfixId.Replace("KB", "") | Out-String
-                            $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}"
-
-                            Write-Output ("[*] Removing update with command: " + $RemovalCommand)
 
                             If ($Restart.IsPresent)
                             {
 
                                 Write-Output "[*] Restart switch parameter is defined. You will be prompted to restart."
 
-                                cmd /c wusa /uninstall /kb:$KBNumber /promptrestart
+                                cmd /c wusa /uninstall /kb:$KBNumber /promptrestart /log
 
                             }  # End If
                             Else
                             {
 
-                                cmd /c wusa /uninstall /kb:$KBNumber /norestart
+                                cmd /c wusa /uninstall /kb:$KBNumber /norestart /log
 
                             }  # End Else
 
@@ -280,22 +277,19 @@ PROCESS
             {
 
                 $KBNumber = $Patch.HotfixId.Replace("KB", "") | Out-String
-                $RemovalCommand = "Start-Process -FilePath C:\Windows\System32\wusa.exe -Verb RunAs -ArgumentList {/uninstall /kb:$KBNumber /quiet /log /norestart}"
-
-                Write-Verbose ("[*] Removing update with command: " + $RemovalCommand)
 
                 If ($Restart.IsPresent)
                 {
 
                     Write-Output "[*] Restart switch parameter is defined. You will be prompted to restart."
 
-                    cmd /c wusa /uninstall /kb:$KBNumber /norestart
+                    cmd /c wusa /uninstall /kb:$KBNumber /norestart /log
 
                 }  # End If
                 Else
                 {
 
-                    cmd /c wusa /uninstall /kb:$KBNumber /norestart
+                    cmd /c wusa /uninstall /kb:$KBNumber /norestart /log
 
                 }  # End Else
 
