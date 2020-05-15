@@ -195,7 +195,7 @@ PROCESS
                         {
 
                             $KBNumber = $Hotfix.Replace("KB", "");
-                            $RemovalCommand = "wusa.exe /uninstall /kb:$HotFix /quiet /log /norestart";
+                            $RemovalCommand = 'Start-Process -FilePath "C:\Windows\System32\cmd.exe" -Verb RunAs -ArgumentList {/c wusa.exe /uninstall /kb:$HotFix /quiet /log /norestart}'
 
                             Write-Verbose ("Removing update with command: " + $RemovalCommand);
 
