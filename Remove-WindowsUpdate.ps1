@@ -1,104 +1,69 @@
 <#
-.NAME
-    Remove-WindowsUpdate
-
-
 .SYNOPSIS
-    This cmdlet is for uninstalling a Windows Update. This can remove multiple hot fixes
-    and it can remove hot fixes from an array of remote computers.
+This cmdlet is for uninstalling a Windows Update. This can remove multiple hot fixes
+and it can remove hot fixes from an array of remote computers.
 
 
 .DESCRIPTION
-    Remove-WindowsUpdate is a cmdlet that is used to remove a speficied Windows Update or Updates
-    from a local computer or a remote host or hosts. A list of computer names can be piped to this
-    function by property name.
+Remove-WindowsUpdate is a cmdlet that is used to remove a speficied Windows Update or Updates
+from a local computer or a remote host or hosts. A list of computer names can be piped to this
+function by property name.
 
 
-.SYNTAX
-    Remove-WindowsUpdate [-HotFixID] <String[]> [<CommonParameters>]
+.PARAMETERS HotFixID 
+Specifies the hotfix IDs that this cmdlet gets.
 
+.PARAMETER ComputerName
+Specifies a remote computer. The default is the local computer.
 
-.PARAMETERS
-    -HotFixID <String[]>
-        Specifies the hotfix IDs that this cmdlet gets.
-
-        Required?                    true
-        Position?                    0
-        Default value                None
-        Accept pipeline input?       False
-        Accept wildcard characters?  false
-
-    -ComputerName <String[]>
-        Specifies a remote computer. The default is the local computer.
-
-        Type the NetBIOS name, an Internet Protocol (IP) address, or a fully qualified domain name (FQDN) of a remote
-        computer.
-
-        Required?                    false
-        Position?                    1
-        Default value                None
-        Accept pipeline input?       true (By Property Name)
-        Accept wildcard characters?  false
-
-    -Restart [<SwitchParameter>]
-        Specifies whether or not the remote computer should be restarted after the patch is removed.
-
-        Required?                    false
-        Position?                    none
-        Default value                off
-        Accept pipeline input?       false
-        Accept wildcard characters?  false
-
-    <CommonParameters>
-        This cmdlet supports the common parameters: Verbose, Debug,
-        ErrorAction, ErrorVariable, WarningAction, WarningVariable,
-        OutBuffer, PipelineVariable, and OutVariable. For more information, see
-        about_CommonParameters (https:/go.microsoft.com/fwlink/?LinkID=113216).
-
+.PARAMETER Restart
+Indicates you wish to perform a restart after removing the update.
 
 .EXAMPLE
-    -------------------------- EXAMPLE 1 --------------------------
-    Remove-WindowsUpdate -HotFixID "4556799"
-    This examples uninstalls 4556799 from the local computer if it is installed.
+Remove-WindowsUpdate -HotFixID "4556799"
+# This examples uninstalls 4556799 from the local computer if it is installed.
 
-    -------------------------- EXAMPLE 2 --------------------------
-    Remove-WindowsUpdate "KB4556799"
-    This examples also uninstalls HotFix KB4556799 from the local computer.
+.EXAMPLE
+Remove-WindowsUpdate "KB4556799"
+# This examples also uninstalls HotFix KB4556799 from the local computer.
 
-    -------------------------- EXAMPLE 3 --------------------------
-    Remove-WindowsUpdate -HotFixID "KB4556799" -ComputerName 10.10.10.120 -Restart
-    This examples uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120 and if a restart is needed allows it to restart.
+.EXAMPLE 3
+Remove-WindowsUpdate -HotFixID "KB4556799" -ComputerName 10.10.10.120 -Restart
+# This examples uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120 and if a restart is needed allows it to restart.
 
-    -------------------------- EXAMPLE 4 --------------------------
-    Remove-WindowsUpdate "KB4556799" 10.10.10.120
-    This examples also uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120.
+EXAMPLE
+Remove-WindowsUpdate "KB4556799" 10.10.10.120
+# This examples also uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120.
 
 
 .NOTES
-    Author: Rob Osborne
-    Alias: tobor
-    Contact: rosborne@osbornepro.com
+Author: Rob Osborne
+Alias: tobor
+Contact: rosborne@osbornepro.com
 
 
 .INPUTS
-    System.String
-        You can pipe computer names to this cmdlet..
-
-        In Windows PowerShell 2.0, the ComputerName parameter takes input from the pipeline only by property name. In
-        Windows PowerShell 3.0, the ComputerName parameter takes input from the pipeline by value.
+System.String
+    You can pipe computer names to this cmdlet..
+    In Windows PowerShell 2.0, the ComputerName parameter takes input from the pipeline only by property name. In
+    Windows PowerShell 3.0, the ComputerName parameter takes input from the pipeline by value.
 
 
 .OUTPUTS
-    None, System.Management.Automation.RemotingJob
-        This cmdlet returns a job object, if you specify the AsJob parameter. Otherwise, it does not generate any
-        output.
+None, System.Management.Automation.RemotingJob
+    This cmdlet returns a job object, if you specify the AsJob parameter. Otherwise, it does not generate any output.
 
 
 .LINK
-    https://github.com/tobor88
-    https://www.powershellgallery.com/profiles/tobor
-    https://roberthosborne.com
-
+https://github.com/tobor88
+https://gitlab.com/tobor88
+https://www.powershellgallery.com/profiles/tobor
+https://roberthosborne.com
+https://osbornepro.com
+https://www.powershellgallery.com/profiles/tobor
+https://www.hackthebox.eu/profile/52286
+https://www.linkedin.com/in/roberthosborne/
+https://www.youracclaim.com/users/roberthosborne/badges
 #>
 Function Remove-WindowsUpdate {
     [CmdletBinding()]
@@ -226,7 +191,7 @@ PROCESS
                             Else
                             {
 
-                                cmd /c wusa /uninstall /kb:$KBNumber /norestart /log
+                                cmd /c echo y | wusa /uninstall /kb:$KBNumber /norestart /log
 
                             }  # End Else
 
