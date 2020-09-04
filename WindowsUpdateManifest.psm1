@@ -1,23 +1,33 @@
 <#
-.Synopsis
-	Update-Windows is a cmdlet created to update Windows when updates are available. This cmdlet also creates logs of update attempts
-	System Administrators will be alerted if updates fail. This cmdlet creates a CSV file to be uploaded into a SQL database.
-	Originally I had this function upload the csv contents into a SQL database. To better coform to PowerShell scripting guidelines I am changing this behavior.
+.SYNOPSIS
+Update-Windows is a cmdlet created to update Windows when updates are available. This cmdlet also creates logs of update attempts
+System Administrators will be alerted if updates fail. This cmdlet creates a CSV file to be uploaded into a SQL database.
+Originally I had this function upload the csv contents into a SQL database. To better coform to PowerShell scripting guidelines I am changing this behavior.
+
 
 .DESCRIPTION
-    This cmdlet updates windows, logs results, and alerts administrators of failures.
+This cmdlet updates windows, logs results, and alerts administrators of failures.
+
+
+.EXAMPLE
+Update-Windows
+# This example checks for all available Windows Updates and the downloads and installs them logging the results to C:\Windows\Temp\$env:COMPUTERNAME
+
 
 .NOTES
-    Author: Rob Osborne
-    Alias: tobor
-	Contact: rosborne@osbornepro.com
-	https://roberthosborne.com
+Author: Rob Osborne
+Alias: tobor
+Contact: rosborne@osbornepro.com
 
-.EXAMPLE
-   Update-Windows
-
-.EXAMPLE
-   Update-Windows -Verbose
+.LINK
+https://github.com/tobor88
+https://gitlab.com/tobor88
+https://osbornepro.com
+https://roberthosborne.com
+https://www.powershellgallery.com/profiles/tobor
+https://www.hackthebox.eu/profile/52286
+https://www.youracclaim.com/users/roberthosborne/badges
+https://www.linkedin.com/in/roberthosborne/
 #>
 Function Update-Windows {
 	[CmdletBinding()]
