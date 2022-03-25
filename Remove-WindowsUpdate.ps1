@@ -104,16 +104,16 @@ BEGIN {
             ForEach ($Computer in $ComputerName) {
 
                 Write-Verbose "[*] Testing specified $Computer is reachable"
-                If (Test-Connection -ComputerName $Computer -Quiet -ErrorAction Inquire) {
+                If (Test-Connection -ComputerName $Computer -Count 2 -BufferSize 32 -Quiet -ErrorAction Inquire) {
 
                     Write-Verbose "[*] $Computer is reachable"
-                    If ($Null -eq $Cred) {
+                    If ($Null -eq $Credential) {
 
-                        $Cred = Get-Credential -Message "Administrator Credentials are required to execute commands on remote hosts" -Username ($env:USERNAME + "@" + $env:USERDNSDOMAIN)
+                        $Credential = Get-Credential -Message "Administrator Credentials are required to execute commands on remote hosts" -Username ($env:USERNAME + "@" + $env:USERDNSDOMAIN)
 
                     }  # End If
                     
-                    New-Variable -Name "Session$i" -Value (New-PsSession -HiComputerName $Computer -Credential $Cred -Name $Computer -EnableNetworkAccess -Port 5985)
+                    New-Variable -Name "Session$i" -Value (New-PsSession -ComputerName $Computer -Credential $Credential -Name $Computer -EnableNetworkAccess -Port 5985)
 
                 }  # End If
 
