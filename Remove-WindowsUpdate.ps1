@@ -9,7 +9,7 @@ Cmdlet that is used to remove a speficied Windows Update or Updatesfrom a local 
 A list of computer names can be piped to this function by property name.
 
 
-.PARAMETERS HotFixID 
+.PARAMETER HotFixID 
 Specifies the hotfix IDs that this cmdlet gets.
 
 .PARAMETER ComputerName
