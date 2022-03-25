@@ -1,13 +1,12 @@
 <#
 .SYNOPSIS
-This cmdlet is for uninstalling a Windows Update. This can remove multiple hot fixes
-and it can remove hot fixes from an array of remote computers.
+This cmdlet is for uninstalling a Windows Update.
+This can remove multiple hot fixes and it can remove hot fixes from an array of remote computers.
 
 
 .DESCRIPTION
-Remove-WindowsUpdate is a cmdlet that is used to remove a speficied Windows Update or Updates
-from a local computer or a remote host or hosts. A list of computer names can be piped to this
-function by property name.
+Cmdlet that is used to remove a speficied Windows Update or Updatesfrom a local computer or a remote host or hosts. 
+A list of computer names can be piped to this function by property name.
 
 
 .PARAMETERS HotFixID 
@@ -37,33 +36,32 @@ Remove-WindowsUpdate "KB4556799" 10.10.10.120
 
 
 .NOTES
-Author: Rob Osborne
+Author: Robrt H. Osborne
 Alias: tobor
 Contact: rosborne@osbornepro.com
 
 
 .INPUTS
 System.String
-    You can pipe computer names to this cmdlet..
-    In Windows PowerShell 2.0, the ComputerName parameter takes input from the pipeline only by property name. In
-    Windows PowerShell 3.0, the ComputerName parameter takes input from the pipeline by value.
+You can pipe computer names to this cmdlet..
+In Windows PowerShell 2.0, the ComputerName parameter takes input from the pipeline only by property name. 
+In Windows PowerShell 3.0, the ComputerName parameter takes input from the pipeline by value.
 
 
 .OUTPUTS
 None, System.Management.Automation.RemotingJob
-    This cmdlet returns a job object, if you specify the AsJob parameter. Otherwise, it does not generate any output.
+This cmdlet returns a job object, if you specify the AsJob parameter. Otherwise, it does not generate any output.
 
 
 .LINK
 https://github.com/tobor88
 https://gitlab.com/tobor88
 https://www.powershellgallery.com/profiles/tobor
-https://roberthosborne.com
 https://osbornepro.com
 https://www.powershellgallery.com/profiles/tobor
 https://www.hackthebox.eu/profile/52286
 https://www.linkedin.com/in/roberthosborne/
-https://www.youracclaim.com/users/roberthosborne/badges
+https://www.credly.com/users/roberthosborne/badges
 #>
 Function Remove-WindowsUpdate {
     [CmdletBinding()]
@@ -83,51 +81,39 @@ Function Remove-WindowsUpdate {
                 HelpMessage="Enter the name or names of the remote compute you wish to uninstall. Separate multiple values with a comma. `nExample: 'Comp1.domain.com','Comp2','10.10.10.123'`n")]  # End Paramater
             [ValidateNotNullOrEmpty()]
             [String[]]$ComputerName,
+    
+            [Parameter(
+                Mandatory=$False,
+                ValueFromPipeline=$False)]
+             [ValidateNotNull()]
+             [System.Management.Automation.PSCredential]
+             [System.Management.Automation.Credential()]
+             $Credential = [System.Management.Automation.PSCredential]::Empty,
 
             [Parameter(
                 Mandatory=$False)]
-            [switch][bool]$Restart
+            [Switch][Bool]$Restart
         )  # End param
 
-BEGIN
-{
+BEGIN {
 
-    If ($ComputerName)
-    {
+    If ($ComputerName) {
 
-        For ($i = 0; $i -lt $ComputerName.Count ; $i++)
-        {
+        For ($i = 0; $i -lt $ComputerName.Count ; $i++) {
 
-            ForEach ($Computer in $ComputerName)
-            {
+            ForEach ($Computer in $ComputerName) {
 
                 Write-Verbose "[*] Testing specified $Computer is reachable"
-
-                If (Test-Connection -ComputerName $Computer -Quiet -ErrorAction Inquire)
-                {
+                If (Test-Connection -ComputerName $Computer -Quiet -ErrorAction Inquire) {
 
                     Write-Verbose "[*] $Computer is reachable"
-                    Try
-                    {
+                    If ($Null -eq $Cred) {
 
-                        If ($Null -eq $Cred)
-                        {
+                        $Cred = Get-Credential -Message "Administrator Credentials are required to execute commands on remote hosts" -Username ($env:USERNAME + "@" + $env:USERDNSDOMAIN)
 
-                            $Cred = Get-Credential -Message "Administrator Credentials are required to execute commands on remote hosts" -Username ($env:USERNAME + "@" + ((Get-WmiObject Win32_ComputerSystem).Domain))
-
-                        }  # End If
-
-                        New-Variable -Name "Session$i" -Value (New-PsSession -ComputerName $Computer -Credential $Cred -Name $Computer -EnableNetworkAccess -Port 5986 -UseSSL)
-
-                    }  # End Try
-                    Catch
-                    {
-
-                        Write-Verbose "[*] Skipping certificate validation checks to create an encrypted session with the remote host."
-
-                        New-Variable -Name "Session$i" -Value (New-PsSession -ComputerName $Computer -Credential $Cred -EnableNetworkAccess -Port 5986 -UseSSL -SessionOption (New-PsSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck))
-
-                    }  # End Catch
+                    }  # End If
+                    
+                    New-Variable -Name "Session$i" -Value (New-PsSession -HiComputerName $Computer -Credential $Cred -Name $Computer -EnableNetworkAccess -Port 5985)
 
                 }  # End If
 
@@ -138,69 +124,55 @@ BEGIN
     }  # End If
 
 }  # End BEGIN
-PROCESS
-{
+PROCESS {
 
-    If ($ComputerName)
-    {
-        For ($n = 0; $n -lt $ComputerName.Count; $n++)
-        {
+    If ($ComputerName) {
+    
+        For ($n = 0; $n -lt $ComputerName.Count; $n++) {
 
-            ForEach ($C in $ComputerName)
-            {
+            ForEach ($C in $ComputerName) {
 
                 Write-Verbose "[*] Starting connection to $C"
-
                 Invoke-Command -Session (Get-Variable -Name "Session$n").Value -ArgumentList $HotFixID -ScriptBlock {
                     param([array]$HotFixID)
-
-                    Write-Output "[*] Getting list of installed patches"
-
+                    
+                    Write-Output "[*] $env:COMPUTERNAME: Getting list of installed patches"
                     $PatchList = Get-CimInstance -ClassName "Win32_QuickFixEngineering" -Namespace "root\cimv2"
 
-                    ForEach ($HotFix in $HotFixID)
-                    {
+                    ForEach ($HotFix in $HotFixID) {
 
                         $Patch = $PatchList | Where-Object { $_.HotFixID -like "$HotFix" }
-
                         Write-Output "[*] $Patch will be removed from $env:COMPUTERNAME"
 
-                        If (!($Patch))
-                        {
+                        If (!($Patch)) {
 
-                            Write-Output "[!] The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
+                            Write-Output "[!] $env:COMPUTERNAME: The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
                             Remove-Variable -Name "Patch"
 
                             $PatchList
 
                         }  # End If
-                        Else
-                        {
+                        Else {
 
-                            Write-Output "[*] $HotFix is installed on $env:COMPUTERNAME, continuing uninstallation"
+                            Write-Output "[*] $env:COMPUTERNAME: $HotFix is installed on $env:COMPUTERNAME, continuing uninstallation"
                             $KBNumber = $Patch.HotfixId.Replace("KB", "") | Out-String
 
-                            If ($Restart.IsPresent)
-                            {
+                            If ($Restart.IsPresent) {
 
-                                Write-Output "[*] Restart switch parameter is defined. You will be prompted to restart."
-
+                                Write-Output "[*] $env:COMPUTERNAME: Restart switch parameter is defined. You will be prompted to restart."
                                 cmd /c wusa /uninstall /kb:$KBNumber /promptrestart /log
 
                             }  # End If
-                            Else
-                            {
+                            Else {
 
                                 cmd /c echo y | wusa /uninstall /kb:$KBNumber /norestart /log
 
                             }  # End Else
 
-                            While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
-                            {
+                            While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0) {
 
                                 Start-Sleep -Seconds 10
-
-                                Write-Host "Waiting for update removal to finish. Please wait..."
+                                Write-Output "[*] $env:COMPUTERNAME: Waiting for update removal to finish. Please wait..."
 
                             }  # End While
 
@@ -210,59 +182,47 @@ PROCESS
 
                 }  # End Invoke-Command
 
-                Write-Verbose "[*] Finished removing updates from $C"
+                Write-Output "[*] Finished removing updates from $C"
 
             }  # End ForEach
 
         }  # End For
 
     }  # End If
-    Else
-    {
+    Else {
 
-        Write-Verbose "[*] Getting list of installed patches on $env:COMPUTERNAME"
-
+        Write-Verbose "[*] $env:COMPUTERNAME: Getting list of installed patches"
         $PatchList = Get-CimInstance -ClassName "Win32_QuickFixEngineering" -Namespace "root\cimv2"
 
-        ForEach ($HotFix in $HotFixID)
-        {
+        ForEach ($HotFix in $HotFixID) {
 
             $Patch = $PatchList | Where-Object { $_.HotFixID -like "$HotFix" }
+            If (!($Patch)) {
 
-            If (!($Patch))
-            {
-
-                Write-Output "[!] The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
+                Write-Output "[!] $env:COMPUTERNAME: The Windows Update KB number you defined is not installed on $env:COMPUTERNAME. Below is a table of installed patches: "
                 Remove-Variable -Name "Patch"
 
                 $PatchList
 
             }  # End If
-            Else
-            {
+            Else {
 
                 $KBNumber = $Patch.HotfixId.Replace("KB", "") | Out-String
+                If ($Restart.IsPresent) {
 
-                If ($Restart.IsPresent)
-                {
-
-                    Write-Output "[*] Restart switch parameter is defined. You will be prompted to restart."
-
-                    cmd /c wusa /uninstall /kb:$KBNumber /norestart /log
+                    Write-Output "[*] $env:COMPUTERNAME: Restart switch parameter is defined. You will be prompted to restart."
+                    cmd /c wusa /uninstall /kb:$KBNumber /promptrestart /log
 
                 }  # End If
-                Else
-                {
+                Else {
 
                     cmd /c wusa /uninstall /kb:$KBNumber /norestart /log
 
                 }  # End Else
 
-                While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0)
-                {
+                While (@(Get-Process wusa -ErrorAction SilentlyContinue).Count -ne 0) {
 
                     Start-Sleep -Seconds 10
-
                     Write-Output "[*] Waiting for update removal to finish. Please wait..."
 
                 }  # End While
@@ -276,14 +236,11 @@ PROCESS
     }  # End Else
 
 }  # End PROCESS
-END
-{
+END {
 
-    If (Get-PsSession)
-    {
+    If (Get-PsSession) {
 
         Write-Verbose "[*] Closing connection to remote computers."
-
         Remove-PsSession *
 
     }  # End If
