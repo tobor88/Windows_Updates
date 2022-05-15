@@ -1,5 +1,5 @@
 Write-Output "[*] Stopping services that use the directories we need renamed"
-Stop-Service -Name wuauserv,cryptsvc,bits,msiserver
+Stop-Service -Name cryptsvc,wuauserv,bits,msiserver -Force -Confirm:$False
 
 Write-Output "[*] Renaming C:\Windows\SoftwareDistribution to SoftwareDistribution.bak"
 If (Test-Path -Path "C:\Windows\SoftwareDistribution.bak") {
