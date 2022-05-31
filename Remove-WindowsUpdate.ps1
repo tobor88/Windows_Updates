@@ -26,11 +26,11 @@ Remove-WindowsUpdate -HotFixID "4556799"
 Remove-WindowsUpdate "KB4556799"
 # This examples also uninstalls HotFix KB4556799 from the local computer.
 
-.EXAMPLE 3
+.EXAMPLE
 Remove-WindowsUpdate -HotFixID "KB4556799" -ComputerName 10.10.10.120 -Restart
 # This examples uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120 and if a restart is needed allows it to restart.
 
-EXAMPLE
+.EXAMPLE
 Remove-WindowsUpdate "KB4556799" 10.10.10.120
 # This examples also uninstalls HotFix KB4556799 from a remote computer at 10.10.10.120.
 
