@@ -51,7 +51,7 @@ None
 
 
 .OUTPUTS
-None
+System.String
 #>
 Function Get-WindowsUpdateErrorCode {
     [CmdletBinding()]
