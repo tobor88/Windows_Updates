@@ -2,12 +2,12 @@
 I have stopped working on the web application as there are better solutions out there. I have left the web app in this module for anyone who may find use from the code. I have started building cmdlets instead that help fix and research Windows Update issues.
 
 ### Cmdlet List
-- Clear-GpoRegistrySettings.ps1 (*Fix failed Windows Updates caused by policy errors*)
-- Get-WindowsUpdateError.ps1 (*Save a log file to your desktop containing logs on Windows Updates*)
-- Get-WindowsUpdateErrorCode.ps1 (*Return the error code reason for failed Windows Updates, save log files to desktop, and option to run troubleshooter*)
-- Remove-WindowsUpdate.ps1 (*Uninstall a Windows Update by KB number on a remote or local device*)
-- Repair-WindowsUpdate.ps1 (*Stops Windows Update related services and renames directory locations which fixes 90% of all update issues in my experience*)
-- Update-Windows.ps1 (*Install any missing Windows Updates*)
+- **Clear-GpoRegistrySettings.ps1** (*Fix failed Windows Updates caused by policy errors*)
+- **Get-WindowsUpdateError.ps1** (*Save a log file to your desktop containing logs on Windows Updates*)
+- **Get-WindowsUpdateErrorCode.ps1** (*Return the error code reason for failed Windows Updates, save log files to desktop, and option to run troubleshooter*)
+- **Remove-WindowsUpdate.ps1** (*Uninstall a Windows Update by KB number on a remote or local device*)
+- **Repair-WindowsUpdate.ps1** (*Stops Windows Update related services and renames directory locations which fixes 90% of all update issues in my experience*)
+- **Update-Windows.ps1** (*Install any missing Windows Updates*)
 
 ### Required Applications
 - Visual Studio 2019 Preview
