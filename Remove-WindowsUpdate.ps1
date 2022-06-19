@@ -55,9 +55,11 @@ This cmdlet returns a job object, if you specify the AsJob parameter. Otherwise,
 
 .LINK
 https://github.com/tobor88
-https://gitlab.com/tobor88
+https://github.com/osbornepro
 https://www.powershellgallery.com/profiles/tobor
 https://osbornepro.com
+https://writeups.osbornepro.com
+https://btpssecpack.osbornepro.com
 https://www.powershellgallery.com/profiles/tobor
 https://www.hackthebox.eu/profile/52286
 https://www.linkedin.com/in/roberthosborne/
