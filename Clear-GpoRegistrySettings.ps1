@@ -1,23 +1,30 @@
 <#
 .SYNOPSIS
-This cmdlet is used to repair a failed windows update related to a policy error. 
+This cmdlet is used to rebuild the registry.pol machine group policy settings
 
 
 .DESCRIPTION
-Renames the C:\Windows\System32\GroupPolicy\Machine\Registry.pol file and initiates a group policy update to attempt fixing a failed windows update caused by some kind of policy error
+Rename the registry.pol file to rebuild a local machines group policy settings
 
 
 .PARAMETER NewName
-Define the new file name and location to save the registry.pol file backup as
+Define a location to save the backup of the registry.pol file using this value
+
+.PARAMETER SkipGpUpdate
+Tell the cmdlet to not execute a gpupdate after renaming the registry.pol machine group policy file
 
 
 .EXAMPLE
 Clear-GpoRegistrySettings
-# This example renames the registry file C:\Windows\System32\GroupPolicy\Machine\Registry.pol to C:\Windows\System32\GroupPolicy\Machine\Registry.old
+# This example renames C:\Windows\System32\GroupPolicy\Machine\Registry.pol to C:\Windows\System32\GroupPolicy\Machine\Registry.old and runs a gpupdate
 
 .EXAMPLE
-Clear-GpoRegistrySettings -NewName C:\Windows\System32\GroupPolicy\Machine\Registry.bak
-# This example renames the registry file C:\Windows\System32\GroupPolicy\Machine\Registry.pol to C:\Windows\System32\GroupPolicy\Machine\Registry.bak
+Clear-GpoRegistrySettings -NewName C:\Windows\System32\GroupPolicy\Machine\Registry.old
+# This example renames C:\Windows\System32\GroupPolicy\Machine\Registry.pol to C:\Windows\System32\GroupPolicy\Machine\Registry.old and runs a gpupdate
+
+.EXAMPLE
+Clear-GpoRegistrySettings -SkipGpUpdate
+# This example renames C:\Windows\System32\GroupPolicy\Machine\Registry.pol to C:\Windows\System32\GroupPolicy\Machine\Registry.old and does not run a gpupdate
 
 
 .NOTES
@@ -26,25 +33,24 @@ Alias: tobor
 Contact: rosborne@osbornepro.com
 
 
-.LINK
-https://github.com/tobor88
-https://github.com/osbornepro
-https://gitlab.com/tobor88
-https://osbornepro.com
-https://writeups.osbornepro.com
-https://btpssecpack.osbornepro.com
-https://www.powershellgallery.com/profiles/tobor
-https://www.hackthebox.eu/profile/52286
-https://www.credly.com/users/roberthosborne/badges
-https://www.linkedin.com/in/roberthosborne/
-
-
 .INPUTS
 None
 
 
 .OUTPUTS
 None
+
+
+.LINK
+https://osbornepro.com
+https://btpssecpack.osbornepro.com
+https://writeups.osbornepro.com
+https://github.com/OsbornePro
+https://github.com/tobor88
+https://www.powershellgallery.com/profiles/tobor
+https://www.hackthebox.eu/profile/52286
+https://www.linkedin.com/in/roberthosborne/
+https://www.credly.com/users/roberthosborne/badges
 #>
 Function Clear-GpoRegistrySettings {
     [CmdletBinding(SupportsShouldProcess)]
@@ -53,18 +59,42 @@ Function Clear-GpoRegistrySettings {
                 Position=0,
                 Mandatory=$False,
                 ValueFromPipeline=$False)]  # End Parameter
-            [String]$NewName = "C:\Windows\System32\GroupPolicy\Machine\Registry.old"
+            [String]$NewName = "C:\Windows\System32\GroupPolicy\Machine\Registry.old",
+
+            [Parameter(
+                Mandatory=$False)]  # End Parameter
+            [Switch][Bool]$SkipGpUpdate
         )  # End param
    
+    $RegPolPath = "C:\Windows\System32\GroupPolicy\Machine\Registry.pol"
     If (Test-Path -Path $RegPolPath -ErrorAction SilentlyContinue) {
 
         If ($PSCmdlet.ShouldProcess($NewName)) {
        
             Write-Output "[*] $RegPolPath file verified to exist, renaming file"
-            Move-Item -Path $RegPolPath -Destination $NewName -Force -Confirm:$False -PassThru
+            Move-Item -Path $RegPolPath -Destination $NewName -Force -Confirm:$False -PassThru -ErrorVariable $MoveFailed
            
-            Write-Output "[*] Performing group policy update"
-            gpupdate /force
+            If ($MoveFailed) {
+
+                Write-Ouput "[x] Failed to rename Registry.pol file to $NewName"
+
+            }  # End If
+
+            If (Test-ComputerSecureChannel) {
+
+                If (!($SkipGpUpdate.IsPresent)) {
+
+                    Write-Output "[*] Performing group policy update"
+                    gpupdate /force
+
+                }  # End If
+
+            } Else {
+           
+                Throw "[x] $env:COMPUTERNAME : Domain trust failed, group policy update can not be performed"
+
+            }  # End If Else
+
 
         } Else {
        
@@ -73,6 +103,10 @@ Function Clear-GpoRegistrySettings {
 
         }  # End If Else
 
-    }  # End If
+    } Else {
+   
+        Write-Error "[x] $RegPolPath file does NOT exist!"
+
+    }  # End If Else
 
 }  # End Function Clear-GpoRegistrySettings
