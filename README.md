@@ -1,5 +1,5 @@
 # Windows Updates
-I have stopped working on the web application as there are better solutions out there. I have left the web app in this module for anyone who may find use from the code. I have started building cmdlets instead that help fix and research Windows Update issues.
+This repository contains a collection of PowerShell cmdlets that are useful in updating Windows and troubleshooting issues. Updates that deal with SCCM are also included.
 
 ### Cmdlet List
 - **Clear-GpoRegistrySettings.ps1** (*Fix failed Windows Updates caused by policy errors*)
@@ -8,22 +8,6 @@ I have stopped working on the web application as there are better solutions out 
 - **Remove-WindowsUpdate.ps1** (*Uninstall a Windows Update by KB number on a remote or local device*)
 - **Repair-WindowsUpdate.ps1** (*Stops Windows Update related services and renames directory locations which fixes 90% of all update issues in my experience*)
 - **Update-Windows.ps1** (*Install any missing Windows Updates*)
-
-### Required Applications
-- Visual Studio 2019 Preview
-- ASP.NET Core SDK v2.2
-- PowerShell v5+
-- SQL Server 2017 Express
-
-The purpose of these PowerShell modules is to allow admins the ability to automatically deploy Windows Updates for packages already installed on a device. I plan on adding more to these as time goes on to improve their functionality and make them more appealing than paid providers. It is not at 100% yet. I am updating as I go.
-
-### Tasks Carried Out By These Functions
-1. Download and Install Needed Windows Updates based on installed packages
-2. Create a Log File containing Windows Update Download and Installation information. This log file is saved to C:\Windows\Temp\$env:COMPUTERNAME\ If that directory does not already exist it will of course be created.
-3. If an update fails, the same functions the Windows Update Troubleshooter would carry out as done through the Control Panel Troubleshooter or the Settings Troubleshooter will be carried out. The computer will be restarted as long as it is outside business hours. If it is not outside business hours, the script will wait until it is outside business hours to restart the device.
-4. Send an Email alert to the System Administrators if an udate fails. This alerts the Administrator an error occured while updating windows. The troubleshooter will run automatically. The admin will need to still verify the troubleshooter worked.
-5. To verify the trouble shooter worked, check the log file located at C:\Windows\Temp\$env:COMPUTERNAME\ If there is a .old log file for todays date it means the Windows Update module has run at least twice on that day.
-6. Uploads the results to a SQL database for easy viewing. Provides a function to create the database if it does not exist already.
 
 ### I am merely a contributor to the Update-Windows script. I have modified it to work with the web application and wrote the other functions in the module.
 __REFERENCE:__ <a href="https://social.technet.microsoft.com/Forums/en-US/6f35129d-735d-4ca0-8cc4-786ae901e4f2/powershell-script-to-download-install-windows-updates?forum=winserverwsus">HERE</a> 
