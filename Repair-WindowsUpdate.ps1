@@ -7,6 +7,9 @@ This cmdlet is used to perform a typical repair operation for Windows Updates th
 Performs actions that typicall repair Windows Updates that fail to install
 
 
+.PARAMETER ServiceName
+Define the services to stop that allow you to renamed the defined files
+
 .PARAMETER Path
 Define the path(s) to directories to rename that will allow windows update to try downloading and installing updates again
 
@@ -39,6 +42,8 @@ https://github.com/tobor88
 https://gitlab.com/tobor88
 https://www.powershellgallery.com/profiles/tobor
 https://osbornepro.com
+https://writeups.osbornepro.com
+https://btpssecpack.osbornepro.com
 https://www.powershellgallery.com/profiles/tobor
 https://www.hackthebox.eu/profile/52286
 https://www.linkedin.com/in/roberthosborne/
@@ -51,36 +56,56 @@ Function Repair-WindowsUpdate {
                 Position=0,
                 Mandatory=$False,
                 ValueFromPipeline=$False)]  # End Parameter
-            [String[]]$Path = @("C:\Windows\SoftwareDistribution","C:\Windows\System32\catroot2")
+            [ValidateScript({Get-Service -Name $_})]
+            [String[]]$Services = @("cryptsvc","wuauserv","bits","msiserver"),
+
+            [Parameter(
+                Position=1,
+                Mandatory=$False,
+                ValueFromPipeline=$False)]  # End Parameter
+            [ValidateScript({Test-Path -Path $_})]
+            [String[]]$Path = @("C:\Windows\SoftwareDistribution","C:\Windows\System32\catroot2"),
+
+            [Parameter(
+                Mandatory=$False)]  # End Parameter
+            [Switch][Bool]$Restart
 
         )  # End param
    
     If ($PSCmdlet.ShouldProcess($Path)) {
 
         Write-Output "[*] Stopping services that use the directories we need renamed"
-        Stop-Service -Name cryptsvc,wuauserv,bits,msiserver -Force -Confirm:$False
+        Stop-Service -Name $Services -Force -Confirm:$False
 
         ForEach ($P in $Path) {
 
             If (Test-Path -Path "$($P).bak") {
 
                 Write-Output "[*] Removing the previously backed up directory $($P).bak"
-                Remove-Item -Path "$($P).bak" -Force
+                Remove-Item -Path "$($P).bak" -Force -Confirm:$False
 
             }  # End If
 
             Write-Output "[*] Renaming $($P) to $($P).bak"
-            Rename-Item -Path $P -NewName "$($P).bak"
+            Move-Item -Path $P -NewName "$($P).bak" -Force -Confirm:$False
 
-            Write-Output "[*] Restarting device, update Windows After the restart"
-            Restart-Computer -Confirm:$False -Force    
+            If ($Restart.IsPresent) {
+
+                Write-Output "[*] Restarting device, update Windows After the restart"
+                Restart-Computer -Confirm:$False -Force    
+
+            } Else {
+           
+                Write-Output "[!] Machine still requires a restart to finish fixing failed update"
+
+            }  # End If Else
 
         }  # End ForEach
 
     } Else {
    
         # The -WhatIf parameter was used. Simulating requested actions.
-        Stop-Service -Name cryptsvc,wuauserv,bits,msiserver -Force -Confirm:$False -WhatIf
+        Stop-Service -Name $Services -Force -Confirm:$False -WhatIf
 
         ForEach ($P in $Path) {
 
@@ -90,9 +115,13 @@ Function Repair-WindowsUpdate {
 
             }  # End If
 
-            Rename-Item -Path $P -NewName "$($P).bak" -WhatIf
+            Move-Item -Path $P -NewName "$($P).bak" -WhatIf
 
-            Restart-Computer -WhatIf
+            If ($Restart.IsPresent) {
+
+                Restart-Computer -WhatIf    
+
+            }  # End If
 
         }  # End ForEach
 
