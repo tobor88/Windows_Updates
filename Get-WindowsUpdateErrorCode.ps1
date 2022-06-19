@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-This cmdlet is used to return the error code that caused a windows update to fail. It also saves Windows Update logs to the executers desktop
+This cmdlet is used to return the error code that caused a windows update to fail. 
 
 
 .DESCRIPTION
-Export the Windows Update logs to your desktop and return the error code that contains information on the failed update
+Return the error codes that contains information on a failed Windows or SCCM update
 
 
 .PARAMETER Path
