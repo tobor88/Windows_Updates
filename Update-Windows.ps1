@@ -21,13 +21,15 @@ Contact: rosborne@osbornepro.com
 
 .LINK
 https://github.com/tobor88
-https://gitlab.com/tobor88
+https://github.com/osbornepro
+https://www.powershellgallery.com/profiles/tobor
 https://osbornepro.com
-https://roberthosborne.com
+https://writeups.osbornepro.com
+https://btpssecpack.osbornepro.com
 https://www.powershellgallery.com/profiles/tobor
 https://www.hackthebox.eu/profile/52286
-https://www.youracclaim.com/users/roberthosborne/badges
 https://www.linkedin.com/in/roberthosborne/
+https://www.credly.com/users/roberthosborne/badges
 #>
 Function Update-Windows {
 	[CmdletBinding()]
