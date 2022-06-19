@@ -7,11 +7,14 @@ This cmdlet is used to return the error code that caused a windows update to fai
 Export the Windows Update logs to your desktop and return the error code that contains information on the failed update
 
 
-.PARAMETER RunWindowsTroubleshooter
-Tells the cmdlet to run the Windows Troubleshooter if any error codes are returned
+.PARAMETER Path
+Define the log file or directory containing log files to search for error codes in. Accepts wildcard values
 
-.PARAMETER Force
-Tells the cmdlet to run the Windows Troubleshooter even if there are no errors returned
+.PARAMETER Date
+Define the date to use when searching a collection of C:\Windows\CCM\Log files for SCCM error codes. This parameter can not be used in conjunction with -Path and is for searching SCCM logs
+
+.PARAMETER All
+Return every error code found in the log files instead of the latest unique values only
 
 
 .EXAMPLE
@@ -19,12 +22,12 @@ Get-WindowsUpdateErrorCode
 # Generates a Windows Update log file and saves it to the running users desktop and returns the error code for the failed updates
 
 .EXAMPLE
-Get-WindowsUpdateErrorCode -RunWindowsTroubleshooter
-# Generates a Windows Update log file and saves it to the running users desktop and returns the error code for the failed updates. Runs the Windows Troubleshooter.
+Get-WindowsUpdateErrorCode -Path C:\Windows\Temp\Custom.log -All
+# Searches the log file Custom.log for error codes and returns everyone one of them
 
 .EXAMPLE
-Get-WindowsUpdateErrorCode -RunWindowsTroubleshooter -Force
-# Generates a Windows Update log file and saves it to the running users desktop and returns the error code for the failed updates. Runs the Windows Troubleshooter.
+Get-WindowsUpdateErrorCode -Date (Get-Date).AddDays(-3)
+# Searches all log files in C:\Windows\CCM\Log that have the date from 3 days ago in the log files name
 
 
 .NOTES
@@ -57,115 +60,106 @@ Function Get-WindowsUpdateErrorCode {
     [CmdletBinding()]
         param(
             [Parameter(
-                Mandatory=$False)]  # End Parameter
-            [Switch]$RunWindowsTroubleshooter,
-            
+                ParameterSetName="File",
+                Position=0,
+                Mandatory=$True,
+                ValueFromPipeline=$True,
+                HelpMessage="Define the path to log files. Wildcards are accepted EXAMPLE: C:\Windows\CCM\Logs\*202205*.log")]  # End Parameter
+            [SupportsWildcards()]
+            [String]$Path,
+
             [Parameter(
-                Mandatory=$False)]  # End Parameter
-            [Switch]$Force
+                ParameterSetName="SCCM",
+                Position=0,
+                Mandatory=$False,
+                ValueFromPipeline=$False
+                #HelpMessage="Enter the date of the log files you are checking for errors on. `nEXAMPLE: Get-Date -Date 6/14/2022 `nEXAMPLE: (Get-Date).AddDays(-7)"
+            )]  # End Parameter
+            [DateTime]$Date = (Get-Date),
+
+            [Parameter(
+                Mandatory=$False)]
+            [Switch][Bool]$All
         )  # End param
 
-    Write-Verbose "Building update log file, please wait as this may take a up to a minute to complete."
-    $Job = Start-Job -ScriptBlock { Get-WindowsUpdateLog -ErrorVariable ErrorVariable }
-    $Job | Wait-Job | Remove-Job
+    If ($PSCmdlet.ParameterSetName -eq "SCCM") {
 
-    $UpdateLog = "$env:USERPROFILE\Desktop\WindowsUpdate.log"
-    If (Test-Path -Path "$env:OneDrive\Desktop\WindowsUpdate.log" -ErrorAction SilentlyContinue) {
+        $Month = $Date.Month.ToString("00")
+        $Year = $Date.Year.ToString("0000")
+        $Day = $Date.Day.ToString("00")
 
-        $UpdateLog = "$env:OneDrive\Desktop\WindowsUpdate.log"
-   
+        $Path = "C:\Windows\CCM\Logs\*$($Year)$($Month)$($Day)*.log"
+
     }  # End If
 
-    Write-Verbose "Verifying update log was last written too today"
-    [datetime]$Today = Get-Date
-    $FileProperties = Get-ChildItem -Path $UpdateLog
-    If ((Test-Path -Path $UpdateLog -ErrorAction SilentlyContinue) -and ($FileProperties.LastWriteTime.ToShortDateString() -eq ($Today).ToShortDateString())) {
+    If (Test-Path -Path $Path -ErrorAction SilentlyContinue) {
 
         Write-Verbose "Successfully created Windows Update log file"
-        $Pattern = 'ERROR'
-        $ErrorLog = $UpdateLog.Replace("WindowsUpdate.log","WindowsError.log")
-        Get-Content -Path $UpdateLog | Select-String -Pattern $Pattern | Out-File -FilePath $ErrorLog
-        $ErrorLogContents = Get-Content -Path $ErrorLog
+        [regex]$Pattern = '0x8(.*){5,20}'
 
-        $WriteLine = @()
-        ForEach ($Line in $ErrorLogContents) {
+        $Results = Select-String -Pattern $Pattern -Path $Path -AllMatches | Where-Object -FilterScript { $_ -notlike "*HRESULT = `"0x00000000`";*" -and $_ -notlike "*0x0,*"} | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value }
+        $CodeFilter = @()
+        ForEach ($Line in $Results) {
 
-            If ($Line -NotLike "*succeeded with errors = 0*" -and $Line -NotLike "*and error 0") {
+            $Code = Try { (($Line | Out-String).Substring(0,10) | Select-String -Pattern $Pattern | Out-String).Trim() } Catch { Continue }
 
-                Write-Verbose "Checking for entires in the last 24 hours"
-                Try {
+            If ($All.IsPresent) {
+           
+                $TimeFilter = Try { ($Line | Out-String).Split("=")[1].Split(" ")[0].Replace('"','').Split(".")[0] } Catch { "Error" }
+                $DateFilter = Try { ($Line | Out-String).Split("=")[2].Split(" ")[0].Replace('"','') } Catch { Continue }
+                $ComponentFilter = Try { ($Line | Out-String).Split("=")[3].Split(" ")[0].Replace('"','') } Catch { Continue }
+                If ($ComponentFilter) { Try { $Description = Get-ComponentDescription -Name $ComponentFilter } Catch { $Description = "No translation available. Update Get-ComponentDescription" } }
 
-                    [datetime]$CheckDate = ($Line.ToCharArray() | Select-Object -First 19 ) -Join ''
-                    If (($Null -ne $CheckDate) -and ($CheckDate -gt $Today.AddHours(-24))) {
+                $CodeFilter += New-Object -TypeName PSCustomObject -Property @{ErrorCode=$Code;Date=$DateFilter;Time=$TimeFilter;Log=$ComponentFilter;LogDesc=$Description}
 
-                        $WriteLine += $Line
+            } ElseIf ($Code -notin $CodeFilter.ErrorCode) {
 
-                    }  # End If
+                $Line = (($Results | Select-String -Pattern $Code)[-1] | Out-String).Trim()
+                $TimeFilter = Try { ($Line | Out-String).Split("=")[1].Split(" ")[0].Replace('"','').Split(".")[0] } Catch { "Error" }
+                $DateFilter = Try { ($Line | Out-String).Split("=")[2].Split(" ")[0].Replace('"','') } Catch { Continue }
+                $ComponentFilter = Try { ($Line | Out-String).Split("=")[3].Split(" ")[0].Replace('"','') } Catch { Continue }
+                If ($ComponentFilter) { Try { $Description = Get-ComponentDescription -Name $ComponentFilter } Catch { $Description = "No translation available. Update Get-ComponentDescription" } }
 
-                } Catch {
+                $CodeFilter += New-Object -TypeName PSCustomObject -Property @{ErrorCode=$Code;Date=$DateFilter;Time=$TimeFilter;Log=$ComponentFilter;LogDesc=$Description}
 
-                    Continue
-
-                }  # End Try Catch
-
-            }  # End If
+            }  # End If ElseIf
 
         }  # End ForEach
 
-        If (!$WriteLine) {
-
-            Write-Output "[*] SUCCESS! No Windows Update errors over the last 24 hours"
+        If (-Not $All.IsPresent) {
+       
+            Write-Verbose "Selecting unique error codes"
+            $Results = $CodeFilter | Sort-Object -Unique -Property ErrorCode
 
         } Else {
 
-            [array]$ErrorCodeLine = ($WriteLine | Select-String -Pattern '[0-9]x(.*){8}' | Select-Object -First 1 | Out-String).Trim().Split(":")[-1] -Split " "
-            $ErrorCode = ($ErrorCodeLine | Where-Object -FilterScript { $_ -Match '[0-9]x(.*){8}' }).Replace(",","").Trim()
+            Write-Verbose "Selecting all error codes"
+            $Results = $CodeFilter
 
-            If ($ErrorCode) {
+        }  # End If Else
 
-                If ($RunWindowsTroubleshooter.IsPresent) {
+        If (!$Results) {
 
-                    Write-Verbose "Switch to run the Windows Troubleshooter is present"
-                    Get-TroubleshootingPack -Path "C:\Windows\Diagnostics\System\WindowsUpdate" | Invoke-TroubleshootingPack -Result "C:\DiagResult"
-                    Write-Output "[*] Troubleshooting results saved to C:\DiagResult"
+            Write-Output "[*] SUCCESS! No Windows Update errors on $($Date.ToShortDateString())"
 
-                }  # End If
-                Return $ErrorCode
+        } Else {
+           
+            If ($Null -ne $CodeFilter) {
+
+                Return $Results
 
             } Else {
 
                 Write-Output "[i] No error codes found in the windows update logs"
-                If ($Force.IsPresent) {
-                
-                    $Answer = "y"
-                    
-                } Else {
-                
-                    $Answer = Read-Host -Prompt "Would you like to run the Troubleshooter anyway? [y/N]"
-                    
-                }  # End If Else
-                
-                If ($Answer -like "y*") {
-                
-                    If ($RunWindowsTroubleshooter.IsPresent) {
-
-                        Write-Verbose "Switch to run the Windows Troubleshooter is present"
-                        Get-TroubleshootingPack -Path "C:\Windows\Diagnostics\System\WindowsUpdate" | Invoke-TroubleshootingPack -Result "C:\DiagResult"
-                        Write-Output "[*] Troubleshooting results saved to C:\DiagResult"
-
-                    }  # End If
-                    
-                }  # End If
-
+               
             }  # End If Else
 
         }  # End If Else
 
     } Else {
-   
-        Write-Output "[x] Failed to create Windows Update log file"
-        Throw "$ErrorVariable"
 
+        Write-Error "[x] No log files in the location specified: $Path"
+   
     }  # End If Else
 
 }  # End Function Get-WindowsUpdateErrorCode
