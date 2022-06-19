@@ -3,7 +3,7 @@
 This cmdlet is used with the Get-WindowsUpdateErrorCode.ps1 file in this repository https://github.com/tobor88/Windows_Updates and returns a description translation for the "component" value found in log files in C:\Windows\CCM\Logs
 
 
-.DESCRIPTIOM
+.DESCRIPTION
 Translates compnonent value in C:\Windows\CCM\Log log files to its description as defined in https://docs.microsoft.com/en-us/mem/configmgr/core/plan-design/hierarchy/log-files
 
 
