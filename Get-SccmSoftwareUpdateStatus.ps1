@@ -80,7 +80,7 @@ Function Get-SccmSoftwareUpdateStatus {
             [String]$SiteServer,
            
             [Parameter(
-                Position=3,
+                Position=2,
                 Mandatory=$True,
                 ValueFromPipeline=$True,
                 ValueFromPipelineByPropertyName=$True,
@@ -89,7 +89,7 @@ Function Get-SccmSoftwareUpdateStatus {
             [Int32]$DeploymentID,
          
             [Parameter(
-                Position=4,
+                Position=3,
                 Mandatory=$False,
                 ValueFromPipeline=$False)]  # End Parameter
             [ValidateSet('Success', 'InProgress', 'Error', 'Unknown')]
@@ -106,6 +106,8 @@ Function Get-SccmSoftwareUpdateStatus {
         )  # End param
  
 BEGIN {
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
     $ConfigManagerPath = (Get-Module -Name ConfigurationManager).Path
     If (Test-Path -Path $ConfigManagerPath) {
