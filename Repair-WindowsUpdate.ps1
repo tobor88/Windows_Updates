@@ -87,7 +87,15 @@ Function Repair-WindowsUpdate {
             }  # End If
 
             Write-Output "[*] Renaming $($P) to $($P).bak"
-            Move-Item -Path $P -NewName "$($P).bak" -Force -Confirm:$False
+            Try {
+            
+                Move-Item -Path $P -Destination "$($P).bak" -Force -Confirm:$False
+                
+            } Catch {
+            
+                Rename-Item -Path $P -NewName "$($P).bak" -Force -Confirm:$False
+            
+            }  # End Try Catch
 
             If ($Restart.IsPresent) {
 
@@ -115,7 +123,15 @@ Function Repair-WindowsUpdate {
 
             }  # End If
 
-            Move-Item -Path $P -NewName "$($P).bak" -WhatIf
+            Try {
+            
+                Move-Item -Path $P -Destination "$($P).bak" -Force -Confirm:$False -WhatIf
+                
+            } Catch {
+            
+                Rename-Item -Path $P -NewName "$($P).bak" -Force -Confirm:$False -WhatIf
+            
+            }  # End Try Catch
 
             If ($Restart.IsPresent) {
 
