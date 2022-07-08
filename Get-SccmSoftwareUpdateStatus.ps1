@@ -80,7 +80,7 @@ Function Get-SccmSoftwareUpdateStatus {
             [String]$SiteServer,
            
             [Parameter(
-                Position=2,
+                Position=3,
                 Mandatory=$True,
                 ValueFromPipeline=$True,
                 ValueFromPipelineByPropertyName=$True,
@@ -89,7 +89,7 @@ Function Get-SccmSoftwareUpdateStatus {
             [Int32]$DeploymentID,
          
             [Parameter(
-                Position=3,
+                Position=4,
                 Mandatory=$False,
                 ValueFromPipeline=$False)]  # End Parameter
             [ValidateSet('Success', 'InProgress', 'Error', 'Unknown')]
@@ -107,14 +107,33 @@ Function Get-SccmSoftwareUpdateStatus {
  
 BEGIN {
 
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    If ((Get-PackageProvider -Name Nuget).Version -lt 2.8.5.201) {
+
+        Try {
+
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$False
+
+        } Catch {
+
+            Throw $Error
+
+        }  # End Try Catch
+
+    }  # End If
+
+    $Module = "ConfigurationManager"
+    If (!(Get-Module -ListAvailable -Name $Module)) {
+   
+        Install-Module -Name $Module -Force -Confirm:$False
+
+    }  # End If
 
     $ConfigManagerPath = (Get-Module -Name ConfigurationManager).Path
     If (Test-Path -Path $ConfigManagerPath) {
 
         Import-Module -Name $ConfigManagerPath
         Set-Location -Path "$env:SMS_ADMIN_UI_PATH\..\"
-        New-PSDrive -Name "$($SiteCode)" -PSProvider "CMSite" -Root "$SiteServer" -Description "SCCM Site" | Out-Null
+        New-PSDrive -Name "$($SiteCode)" -PSProvider "CMSite" -Root "$SiteServer" -Description "$SiteCode SCCM Site" | Out-Null
         Set-Location -Path "$($SiteCode):\"
 
     } Else {
