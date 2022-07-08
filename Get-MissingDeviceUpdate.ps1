@@ -20,6 +20,19 @@ Used to return only SCCM approved updates that are missing from a device
 Enter credentials to remotely establish connections with remote machines using WinRM CIM Sessions
 
 
+.EXAMPLE
+Get-MissingDeviceUpdate
+# Get all missing updates on the local device
+
+.EXAMPLE 
+Get-MissingDeviceUpdate -CompliantOnly
+# Get all SCCM approved missing updates
+
+.EXAMPLE
+Get-MissingDeviceUpdate -ComputerName "dc01.domain.com","dhcp.domain.com","fs01.domain.com" -UseSSL -CompliantOnly -Credential $LiveCred
+# Get all SCCM Approved missing updates on those remote devices using WinRM over HTTPS to build your CIM sessions
+
+
 .INPUTS
 System.String, System.Array
 
