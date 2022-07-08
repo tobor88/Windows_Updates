@@ -65,12 +65,13 @@ Function Reset-SccmAgent {
             [ValidateScript({Test-Path -Path $_})]
             [String]$Path = "C:\Windows\ccmcache"
         )  # End param
-
-    Write-Verbose "Restarting the following service: $ServiceName"
+   
+    Write-Verbose "Restarting the $ServiceName service"
     Restart-Service -Name $ServiceName -Force -Confirm:$False -PassThru
-    
+
     Try {
        
+        Write-Verbose "Deleting the file $Path"
         Remove-Item -Path $Path -Recurse -Force -ErrorAction Stop
        
     } Catch {
