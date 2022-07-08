@@ -82,25 +82,25 @@ Function Repair-WindowsUpdate {
             If (Test-Path -Path "$($P).bak") {
 
                 Write-Output "[*] Removing the previously backed up directory $($P).bak"
-                Remove-Item -Path "$($P).bak" -Force -Confirm:$False
+                Remove-Item -Path "$($P).bak" -Recurse -Force -Confirm:$False
 
             }  # End If
 
             Write-Output "[*] Renaming $($P) to $($P).bak"
             Try {
-            
+           
                 Move-Item -Path $P -Destination "$($P).bak" -Force -Confirm:$False
-                
+
             } Catch {
-            
+
                 Rename-Item -Path $P -NewName "$($P).bak" -Force -Confirm:$False
-            
-            }  # End Try Catch
+
+            }  # End Catch
 
             If ($Restart.IsPresent) {
 
                 Write-Output "[*] Restarting device, update Windows After the restart"
-                Restart-Computer -Confirm:$False -Force    
+                Restart-Computer -Confirm:$False -Force
 
             } Else {
            
@@ -119,19 +119,11 @@ Function Repair-WindowsUpdate {
 
             If (Test-Path -Path "$($P).bak") {
 
-                Remove-Item -Path "$($P).bak" -Force -WhatIf
+                Remove-Item -Path "$($P).bak" -Recurse -Force -WhatIf
 
             }  # End If
 
-            Try {
-            
-                Move-Item -Path $P -Destination "$($P).bak" -Force -Confirm:$False -WhatIf
-                
-            } Catch {
-            
-                Rename-Item -Path $P -NewName "$($P).bak" -Force -Confirm:$False -WhatIf
-            
-            }  # End Try Catch
+            Move-Item -Path $P -Destination "$($P).bak" -WhatIf
 
             If ($Restart.IsPresent) {
 
