@@ -91,6 +91,7 @@ Function Get-MissingDeviceUpdate {
 BEGIN {
 
     $Return = @()
+    $NotReachable = @()
 
     $ConfirmSSL = $False
     If ($UseSSL.IsPresent) {
@@ -102,14 +103,26 @@ BEGIN {
 } PROCESS {
 
     If ($PSCmdlet.ParameterSetName -eq "Remote") {
-
+       
+       
         Write-Verbose "Creating CIM Sessions to $ComputerName"
-        $CIMSession = New-CimSession -ComputerName $ComputerName -SessionOption (New-CimSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -UseSsl:$ConfirmSSL) -Credential $Credential -ErrorAction Stop
+        $CIMSession = New-CimSession -ComputerName $ComputerName -SessionOption (New-CimSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -UseSsl:$ConfirmSSL) -Credential $Credential -ErrorAction SilentlyContinue
 
-        Write-Verbose "Getting all missing updates from $C"
+        $CIMConnections = (Get-CimSession).ComputerName
+        ForEach ($C in $ComputerName) {
+
+            If ($C -notin $CIMConnections) {
+
+                $NotReachable += $C 
+
+            }  # End If
+
+        }  # End ForEach
+
+        Write-Verbose "Getting all missing updates from $ComputerName"
         If ($CompliantOnly.IsPresent) {
 
-            $CCMUpdates = Get-CimInstance -CimSession $CIMSession -NameSpace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -Filter "ComplianceState=0" -ErrorAction Continue | Where-Object -FilterScript { $_.Status -eq "Missing" }
+            $CCMUpdates = Get-CimInstance -CimSession $CIMSession -NameSpace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -Filter "ComplianceState=0" -ErrorAction Continue
        
         } Else {
 
@@ -117,12 +130,60 @@ BEGIN {
        
         }  # End If Else
 
-    } Else {
+        If ($Null -eq $CCMUpdates) {
+
+            Write-Output "[*] All updates are installed on $ComputerName"
+
+        } Else {
        
-        Write-Verbose "Getting all missing updates from $C"
+            If ($CompliantOnly.IsPresent) {
+       
+                $Return += $CCMUpdates | ForEach-Object {
+       
+                    New-Object -TypeName PSCustomObject -Property @{
+                        ExecutingDevice=$env:COMPUTERNAME;
+                        ComputerName=$_.PSComputerName;
+                        PercentComplete=$_.PercentComplete;
+                        ComplianceState=$_.ComplianceState;
+                        Deadline=$_.Deadline;
+                        Article=$_.ArticleID;
+                        ErrorCode=$_.ErrorCode;
+                        Update=$_.Name;
+                    }  # End New-Object -Property
+
+                }  # End ForEach-Object
+
+            } Else {
+
+                $Return += $CCMUpdates | ForEach-Object {
+       
+                    New-Object -TypeName PSCustomObject -Property @{
+                        RunningDevice=$env:COMPUTERNAME;
+                        ComputerName=$_.PSComputerName;
+                        Status=$_.Status;
+                        Article=$_.Article;
+                        Title=$_.Title;
+                    }  # End New-Object -Property
+
+                }  # End ForEach-Object
+       
+            }  # End If Else
+
+        }  # End If Else
+
+        If ($CIMSession) {
+
+            Write-Verbose "Closing CIM Sessions"
+            Remove-CimSession -CimSession $CIMSession -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+
+        }  # End If
+
+    } Else {
+
+        Write-Verbose "Getting all missing updates from $ComputerName"
         If ($CompliantOnly.IsPresent) {
 
-            $CCMUpdates = Get-CimInstance -NameSpace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -Filter "ComplianceState=0" -ErrorAction Continue | Where-Object -FilterScript { $_.Status -eq "Missing" }
+            $CCMUpdates = Get-CimInstance -NameSpace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -Filter "ComplianceState=0" -ErrorAction Continue
 
         } Else {
 
@@ -130,43 +191,78 @@ BEGIN {
        
         }  # End If Else
 
-    }  # End If Else
+        If ($Null -eq $CCMUpdates) {
 
+            Write-Output "[*] All updates are installed on $ComputerName"
 
-    If ($Null -eq $CCMUpdates) {
-
-        Write-Output "[*] All updates are installed on $C"
-
-    } Else {
+        } Else {
        
-        $Return = $CCMUpdates | ForEach-Object {
+            If ($CompliantOnly.IsPresent) {
        
-            New-Object -TypeName PSCustomObject -Property @{
-                RunningDevice=$env:COMPUTERNAME;
-                ComputerName=$_.PSComputerName;
-                Status=$_.Status;
-                Article=$_.Article;
-                Title=$_.Title;
-            }  # End New-Object -Property
+                $Return += $CCMUpdates | ForEach-Object {
+       
+                    New-Object -TypeName PSCustomObject -Property @{
+                        ExecutingDevice=$env:COMPUTERNAME;
+                        ComputerName=$_.PSComputerName;
+                        PercentComplete=$_.PercentComplete;
+                        ComplianceState=$_.ComplianceState;
+                        Deadline=$_.Deadline;
+                        Article=$_.ArticleID;
+                        ErrorCode=$_.ErrorCode;
+                        Update=$_.Name;
+                    }  # End New-Object -Property
 
-        }  # End ForEach-Object
+                }  # End ForEach-Object
+
+            } Else {
+
+                $Return += $CCMUpdates | ForEach-Object {
+       
+                    New-Object -TypeName PSCustomObject -Property @{
+                        RunningDevice=$env:COMPUTERNAME;
+                        ComputerName=$_.PSComputerName;
+                        Status=$_.Status;
+                        Article=$_.Article;
+                        Title=$_.Title;
+                    }  # End New-Object -Property
+
+                }  # End ForEach-Object
+       
+            }  # End If Else
+
+        }  # End If Else
+
+        If ($CIMSession) {
+
+            Write-Verbose "Closing CIM Sessions"
+            Remove-CimSession -CimSession $CIMSession -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+
+        }  # End If
 
     }  # End If Else
 
 } END {
 
-    If ($CIMSession) {
+    If ($NotReachable) {
 
-        Write-Verbose "Closing CIM Sessions"
-        Remove-CimSession -CimSession $CIMSession -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+        $NotReachable | ForEach-Object {
+       
+            $Return += New-Object -TypeName PSCustomObject -Property @{
+                RunningDevice=$env:COMPUTERNAME;
+                ComputerName=$_;
+                Status="No CIM Session could be created";
+                Article="NA";
+                Title="NA";
+            }  # End New-Object -Property
+                   
+        }  # End ForEach-Object
 
     }  # End If
-
 
     If ($Null -ne $Return) {
 
         Return $Return
-
+        
     }  # End If
 
 }  # End B P E
