@@ -5,6 +5,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 
 ## Cmdlet List
 
+- **Add-CMSystemDiscoveryMethodContainer** (*Adds new LDAP containers to query to the SCCM servers system discovery filter*)
 - **Clear-GpoRegistrySettings.ps1** (*Fix failed Windows Updates caused by policy errors*)
 - **Get-ComponentDescription** (*Return descriptino of log file based on component name*)
 - **Get-MissingDeviceUpdate.ps1** (*Return information on missing updates or approved missing SCCM updates*)
