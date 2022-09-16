@@ -29,7 +29,7 @@ Get-KBDownloadLink -ArticleId KB5014692 -Architecture "x64" -OperatingSystem 'Wi
 # This obtains the download link for KB5014692 for a 64-bit architecture Windows Server 2019 machine
 
 .EXAMPLE
-Get-KBDownloadLink -ArticleId KB5014692 -Architecture "x64" -OperatingSystem 'Windows 10 Enterprise' -VersionInfo '21H1'
+Get-KBDownloadLink -ArticleId KB5014692 -Architecture "x64" -OperatingSystem 'Windows 10' -VersionInfo '21H1'
 # This obtains the download link for KB5014692 for a 64-bit architecture Windows 10 Enterprise version 21H1 machine
 
 
@@ -78,14 +78,14 @@ Function Get-KBDownloadLink {
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
-            [ValidateSet("Windows 10 Enterprise", "Windows 10 Pro", "Windows 11 Enterprise", "Windows 11 Pro")]
+            [ValidateSet("Windows 10", "Windows 11")]
             [Parameter(
                 ParameterSetName="Server",
                 Position=1,
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
-            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10 Enterprise", "Windows 10 Pro")]
+            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11")]
             [String]$OperatingSystem = "$((Get-CimInstance -ClassName Win32_OperatingSystem).Caption.Replace('Microsoft ','').Replace(' Standard ','').Replace(' Datacenter ',''))",
 
             [Parameter(
@@ -112,13 +112,13 @@ Function Get-KBDownloadLink {
 
     If ($PSCmdlet.ParameterSetName -eq "Windows10") {
 
-        Write-verbose "Windows 10 OS link being discovered"
-        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -like "*$($Architecture)*" } 
+        Write-verbose -Message "$OperatingSystem OS link being discovered"
+        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -like "*$($Architecture)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
 
     } Else {
 
-        Write-verbose "Windows Server OS link being discovered"
-        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($Architecture)*" } 
+        Write-verbose -Message "$OperatingSystem OS link being discovered"
+        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($Architecture)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
     
     }  # End If Else
 
