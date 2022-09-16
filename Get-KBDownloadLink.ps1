@@ -16,14 +16,21 @@ Define the Operating System you want a link for
 .PARAMETER Architecture
 Define the architecture of the system you are going to install the update on. Default value is x64
 
+.PARAMETER VersionInfo
+Define the version of Windows 10 or 11 being used 
+
 
 .EXAMPLE
 Get-KBDownloadLink -ArticleId KB5014692
+# This obtains the download link for KB5014692 for the OS version and arhcitecture of the machine this command is executed on
+
+.EXAMPLE
+Get-KBDownloadLink -ArticleId KB5014692 -Architecture "x64" -OperatingSystem 'Windows Server 2019'
 # This obtains the download link for KB5014692 for a 64-bit architecture Windows Server 2019 machine
 
 .EXAMPLE
-Get-KBDownloadLink -ArticleId KB5014692 -Architecture "x64"
-# This obtains the download link for KB5014692 for a 64-bit architecture Windows Server 2019 machine
+Get-KBDownloadLink -ArticleId KB5014692 -Architecture "x64" -OperatingSystem 'Windows 10 Enterprise' -VersionInfo '21H1'
+# This obtains the download link for KB5014692 for a 64-bit architecture Windows 10 Enterprise version 21H1 machine
 
 
 .INPUTS
@@ -54,7 +61,7 @@ https://www.linkedin.com/in/roberthosborne/
 https://www.credly.com/users/roberthosborne/badges
 #>
 Function Get-KBDownloadLink {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="Server")]
         param(
             [Parameter(
                 Position=0,
@@ -66,6 +73,14 @@ Function Get-KBDownloadLink {
             [String]$ArticleId,
 
             [Parameter(
+                ParameterSetName="Windows10",
+                Position=1,
+                Mandatory=$False,
+                ValueFromPipeline=$False
+            )]  # End Parameter
+            [ValidateSet("Windows 10 Enterprise", "Windows 10 Pro", "Windows 11 Enterprise", "Windows 11 Pro")]
+            [Parameter(
+                ParameterSetName="Server",
                 Position=1,
                 Mandatory=$False,
                 ValueFromPipeline=$False
@@ -78,21 +93,31 @@ Function Get-KBDownloadLink {
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
-            [ValidateSet("x64", "x86")]
-            [String]$Architecture = "x$(([System.IntPtr]::Size ) * 8)"
+            [ValidateSet("x64", "x86", "ARM")]
+            [String]$Architecture = "x$(([System.IntPtr]::Size ) * 8)",
+
+            [Parameter(
+                ParameterSetName="Windows10",
+                Position=3,
+                Mandatory=$False,
+                ValueFromPipeline=$False
+            )]  # End Parameter
+            [Alias('Windows10Version','Windows11Version')]
+            [String]$VersionInfo = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
         )  # End param
     
     $DownloadLink = @()
     $UpdateIdResponse = Invoke-WebRequest -Uri "https://www.catalog.update.microsoft.com/Search.aspx?q=$ArticleId" -Method GET -UserAgent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0' -ContentType 'text/html; charset=utf-8' -UseBasicParsing
     $DownloadOptions = ($UpdateIdResponse.Links | Where-Object -Property ID -like "*_link")
 
-    If ($OperatingSystem -like "*Windows 10*") {
+    If ($PSCmdlet.ParameterSetName -eq "Windows10") {
 
-        $W10Version = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
-        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($W10Version)*" -and $_.OuterHTML -like "*$($Architecture)*" } 
+        Write-verbose "Windows 10 OS link being discovered"
+        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -like "*$($Architecture)*" } 
 
     } Else {
 
+        Write-verbose "Windows Server OS link being discovered"
         $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($Architecture)*" } 
     
     }  # End If Else
