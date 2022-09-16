@@ -94,7 +94,7 @@ Function Get-KBDownloadLink {
                 ValueFromPipeline=$False
             )]  # End Parameter
             [ValidateSet("x64", "x86", "ARM")]
-            [String]$Architecture = "x$(([System.IntPtr]::Size ) * 8)",
+            [String]$Architecture = "x$((Get-CimInstance Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))",
 
             [Parameter(
                 ParameterSetName="Windows10",
