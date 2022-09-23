@@ -13,6 +13,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Get-SccmSoftwareUpdateStatus.ps1** (*Return device in SCCM matching a certain status such as Error or Unknown*)
 - **Get-WindowsUpdateError.ps1** (*Save a log file to your desktop containing logs on Windows Updates*)
 - **Get-WindowsUpdateErrorCode.ps1** (*Return the error code reason for failed Windows Updates, save log files to desktop, and option to run troubleshooter*)
+- **Get-UpdateHistory.p1** (*Returns information on the history of Windows Updates*)
 - **Install-SccmAgent.ps1** (*Install or reinstall the SCCM Agent on a device*)
 - **Invoke-MissingUpdateInstallation.ps1** (*Installs SCCM approved missing updates ona device*)
 - **Remove-WindowsUpdate.ps1** (*Uninstall a Windows Update by KB number on a remote or local device*)
