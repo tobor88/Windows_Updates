@@ -77,7 +77,7 @@ https://www.credly.com/users/roberthosborne/badges
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
-            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11")]
+            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11","SQL Server 2014","SQL Server 2016","SQL Server 2017","SQL Server 2019")]
             [String]$OperatingSystem = "$((Get-CimInstance -ClassName Win32_OperatingSystem).Caption.Replace('Microsoft ','').Replace(' Standard ','').Replace(' Datacenter ',''))",
 
             [Parameter(
@@ -86,7 +86,7 @@ https://www.credly.com/users/roberthosborne/badges
                 ValueFromPipeline=$False
             )]  # End Parameter
             [ValidateSet("x64", "x86", "ARM")]
-            [String]$Architecture = "x$((Get-CimInstance Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))",
+            [String]$Architecture #= "x$((Get-CimInstance Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))",
 
             [Parameter(
                 ParameterSetName="Windows10",
@@ -95,7 +95,7 @@ https://www.credly.com/users/roberthosborne/badges
                 ValueFromPipeline=$False
             )]  # End Parameter
             [Alias('Windows10Version','Windows11Version')]
-            [String]$VersionInfo = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
+            [String]$VersionInfo #= (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
         )  # End param
     
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]'Tls12,Tls13'
@@ -106,13 +106,23 @@ https://www.credly.com/users/roberthosborne/badges
     If ($PSCmdlet.ParameterSetName -eq "Windows10") {
 
         Write-verbose -Message "$OperatingSystem OS link being discovered"
-        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -like "*$($Architecture)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
-
+        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -notlike "*Dynamic*" }
+        If ($PSBoundParameters.Contains('Architecture')) {
+        
+            $DownloadOptions = $DownlaodOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
+        
+        }  # End If
+        
     } Else {
 
         Write-verbose -Message "$OperatingSystem OS link being discovered"
-        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($Architecture)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
-    
+        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
+        If ($PSBoundParameters.Contains('Architecture')) {
+        
+            $DownloadOptions = $DownlaodOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
+        
+        }  # End If
+        
     }  # End If Else
 
     If ($Null -eq $DownloadOptions) {
