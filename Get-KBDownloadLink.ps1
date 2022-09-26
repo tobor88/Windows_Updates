@@ -117,7 +117,7 @@ https://www.credly.com/users/roberthosborne/badges
 
         Write-verbose -Message "$OperatingSystem OS link being discovered"
         $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
-        If ($PSBoundParameters.Contains('Architecture')) {
+        If ($PSBoundParameters.ContainsKey('Architecture')) {
         
         
         }  # End If
