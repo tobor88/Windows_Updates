@@ -1,3 +1,4 @@
+Function Get-KBDownloadLink {
 <#
 .SYNOPSIS
 This cmdlet is used to retrieve from the Microsoft Update Catalog, a download link for the Article ID KB number you specify
@@ -60,7 +61,6 @@ https://www.hackthebox.eu/profile/52286
 https://www.linkedin.com/in/roberthosborne/
 https://www.credly.com/users/roberthosborne/badges
 #>
-Function Get-KBDownloadLink {
     [CmdletBinding(DefaultParameterSetName="Server")]
         param(
             [Parameter(
