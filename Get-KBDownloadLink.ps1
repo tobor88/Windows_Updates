@@ -73,14 +73,6 @@ Function Get-KBDownloadLink {
             [String]$ArticleId,
 
             [Parameter(
-                ParameterSetName="Windows10",
-                Position=1,
-                Mandatory=$False,
-                ValueFromPipeline=$False
-            )]  # End Parameter
-            [ValidateSet("Windows 10", "Windows 11")]
-            [Parameter(
-                ParameterSetName="Server",
                 Position=1,
                 Mandatory=$False,
                 ValueFromPipeline=$False
@@ -106,6 +98,7 @@ Function Get-KBDownloadLink {
             [String]$VersionInfo = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
         )  # End param
     
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]'Tls12,Tls13'
     $DownloadLink = @()
     $UpdateIdResponse = Invoke-WebRequest -Uri "https://www.catalog.update.microsoft.com/Search.aspx?q=$ArticleId" -Method GET -UserAgent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0' -ContentType 'text/html; charset=utf-8' -UseBasicParsing
     $DownloadOptions = ($UpdateIdResponse.Links | Where-Object -Property ID -like "*_link")
