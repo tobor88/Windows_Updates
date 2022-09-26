@@ -86,7 +86,7 @@ https://www.credly.com/users/roberthosborne/badges
                 ValueFromPipeline=$False
             )]  # End Parameter
             [ValidateSet("x64", "x86", "ARM")]
-            [String]$Architecture #= "x$((Get-CimInstance Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))",
+            [String]$Architecture, #= "x$((Get-CimInstance Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))",
 
             [Parameter(
                 ParameterSetName="Windows10",
@@ -109,7 +109,7 @@ https://www.credly.com/users/roberthosborne/badges
         $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -notlike "*Dynamic*" }
         If ($PSBoundParameters.Contains('Architecture')) {
         
-            $DownloadOptions = $DownlaodOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
+            $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
         
         }  # End If
         
@@ -119,7 +119,6 @@ https://www.credly.com/users/roberthosborne/badges
         $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
         If ($PSBoundParameters.Contains('Architecture')) {
         
-            $DownloadOptions = $DownlaodOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
         
         }  # End If
         
