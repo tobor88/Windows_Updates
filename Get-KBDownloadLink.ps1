@@ -77,8 +77,8 @@ https://www.credly.com/users/roberthosborne/badges
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
-            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11","SQL Server 2014","SQL Server 2016","SQL Server 2017","SQL Server 2019","SQL Server 2022")]
-            [String]$OperatingSystem = "$((Get-CimInstance -ClassName Win32_OperatingSystem).Caption.Replace('Microsoft ','').Replace(' Standard ','').Replace(' Datacenter ',''))",
+            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11","SQL Server 2014","SQL Server 2016","SQL Server 2017","SQL Server 2019")]
+            [String]$OperatingSystem = "$((Get-CimInstance -ClassName Win32_OperatingSystem).Caption.Replace('Microsoft ','').Replace(' Pro','').Replace(' Standard ','').Replace(' Datacenter ',''))",
 
             [Parameter(
                 Position=2,
@@ -118,7 +118,7 @@ https://www.credly.com/users/roberthosborne/badges
         }  # End If
 
         Write-verbose -Message "$OperatingSystem link being discovered"
-        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -notlike "*Dynamic*" }
+        $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -notlike "*Dynamic*" }
         If ($PSBoundParameters.Contains('Architecture')) {
         
             $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
