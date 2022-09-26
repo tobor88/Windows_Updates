@@ -77,7 +77,7 @@ https://www.credly.com/users/roberthosborne/badges
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
-            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11","SQL Server 2014","SQL Server 2016","SQL Server 2017","SQL Server 2019")]
+            [ValidateSet("Windows Server 2012 R2", "Windows Server 2016", "Windows Server 2019", "Windows Server 2022", "Windows 10", "Windows 11","SQL Server 2014","SQL Server 2016","SQL Server 2017","SQL Server 2019","SQL Server 2022")]
             [String]$OperatingSystem = "$((Get-CimInstance -ClassName Win32_OperatingSystem).Caption.Replace('Microsoft ','').Replace(' Standard ','').Replace(' Datacenter ',''))",
 
             [Parameter(
@@ -86,7 +86,7 @@ https://www.credly.com/users/roberthosborne/badges
                 ValueFromPipeline=$False
             )]  # End Parameter
             [ValidateSet("x64", "x86", "ARM")]
-            [String]$Architecture, #= "x$((Get-CimInstance Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))",
+            [String]$Architecture,
 
             [Parameter(
                 ParameterSetName="Windows10",
@@ -95,7 +95,7 @@ https://www.credly.com/users/roberthosborne/badges
                 ValueFromPipeline=$False
             )]  # End Parameter
             [Alias('Windows10Version','Windows11Version')]
-            [String]$VersionInfo #= (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
+            [String]$VersionInfo
         )  # End param
     
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]'Tls12,Tls13'
@@ -103,9 +103,21 @@ https://www.credly.com/users/roberthosborne/badges
     $UpdateIdResponse = Invoke-WebRequest -Uri "https://www.catalog.update.microsoft.com/Search.aspx?q=$ArticleId" -Method GET -UserAgent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0' -ContentType 'text/html; charset=utf-8' -UseBasicParsing
     $DownloadOptions = ($UpdateIdResponse.Links | Where-Object -Property ID -like "*_link")
 
-    If ($PSCmdlet.ParameterSetName -eq "Windows10") {
+    If (!($PSBoundParameters.ContainsKey('Architecture') -and $OperatingSystem -notlike "*SQL*")) {
 
-        Write-verbose -Message "$OperatingSystem OS link being discovered"
+        $Architecture = "x$((Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture.Replace('-bit',''))"
+
+    }  # End If
+
+    If ($PSCmdlet.ParameterSetName -eq "Windows10" -and $OperatingSystem -notlike "*SQL*") {
+
+        If (!($PSBoundParameters.ContainsKey('VersionInfo') -and $OperatingSystem -notlike "*SQL*")) {
+
+            $VersionInfo = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name DisplayVersion).DisplayVersion
+
+        }  # End If
+
+        Write-verbose -Message "$OperatingSystem link being discovered"
         $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -like "*$($VersionInfo)*" -and $_.OuterHTML -notlike "*Dynamic*" }
         If ($PSBoundParameters.Contains('Architecture')) {
         
@@ -115,10 +127,11 @@ https://www.credly.com/users/roberthosborne/badges
         
     } Else {
 
-        Write-verbose -Message "$OperatingSystem OS link being discovered"
+        Write-verbose -Message "$OperatingSystem link being discovered"
         $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($OperatingSystem)*" -and $_.OuterHTML -notlike "*Dynamic*" } 
-        If ($PSBoundParameters.ContainsKey('Architecture')) {
+        If ($PSBoundParameters.ContainsKey('Architecture') -and $OperatingSystem -notlike "*SQL*") {
         
+            $DownloadOptions = $DownloadOptions | Where-Object -FilterScript { $_.OuterHTML -like "*$($Architecture)*" }
         
         }  # End If
         
@@ -136,7 +149,20 @@ https://www.credly.com/users/roberthosborne/badges
         Write-Verbose -Message "Downloading information for $($ArticleID) $($Guid)"
         $Body = @{ UpdateIDs = "[$(@{ Size = 0; UpdateID = $Guid; UidInfo = $Guid } | ConvertTo-Json -Compress)]" }
         $LinksResponse = (Invoke-WebRequest -Uri 'https://catalog.update.microsoft.com/DownloadDialog.aspx' -Method POST -Body $Body -UseBasicParsing -SessionVariable WebSession).Content 
-        $DownloadLink += ($LinksResponse.Split("$([Environment]::NewLine)") | Select-String -Pattern 'downloadInformation' | Select-String -Pattern 'url' | Out-String).Trim().Split("'")[-2]
+        $DownloadLink += ($LinksResponse.Split("$([Environment]::NewLine)") | Select-String -Pattern 'downloadInformation' | Select-String -Pattern 'url' | Out-String).Trim()
+        If ($PSBoundParameters.ContainsKey('Architecture') -and $OperatingSystem -like "*SQL*") {
+        
+            $DownloadLink = ($DownloadLink | ForEach-Object { $_.Split("$([System.Environment]::NewLine)") } | Where-Object -FilterScript { $_ -like "*$Architecture*" }).Trim().Split("'")[-2]
+
+        } ElseIf ($OperatingSystem -like "*SQL*") {
+        
+            $DownloadLink = ($DownloadLink | ForEach-Object { $_.Split("'") } | Where-Object -FilterScript { $_ -like "https://*" }).Split("$([System.Environment]::NewLine)")
+
+        } Else {
+
+            $DownloadLink = ($LinksResponse.Split("$([Environment]::NewLine)") | Select-String -Pattern 'downloadInformation' | Select-String -Pattern 'url' | Out-String).Trim().Split("'")[-2]
+        
+        }  # End If Else
 
     }  # End ForEach
 
