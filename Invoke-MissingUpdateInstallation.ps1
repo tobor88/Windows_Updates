@@ -1,3 +1,4 @@
+Function Invoke-MissingUpdateInstallation {
 <#
 .SYNOPSIS
 This cmdlet is used to install missing Windows and 3rd Party Application updates that are approved in SCCMs Software Center. You can specify a retry count for updates that fail the first time or two. This uses CIM connections to accomplish the task
@@ -9,6 +10,9 @@ This cmdlet can be run locally on a machine to look for and install any approved
 
 .PARAMETER ComputerName
 Define remote computer(s) you wish to install missing updates on
+
+.PARAMETER KBs
+Define the specific KBs you wish to install
 
 .PARAMETER Credential
 Define the credentials that should be used to remotely connect to devices using CIM sessions with WinRM
@@ -57,7 +61,6 @@ https://www.hackthebox.eu/profile/52286
 https://www.linkedin.com/in/roberthosborne/
 https://www.credly.com/users/roberthosborne/badges
 #>
-Function Invoke-MissingUpdateInstallation {
     [CmdletBinding(DefaultParameterSetName="Local")]
         param(
             [Parameter(
@@ -73,101 +76,113 @@ Function Invoke-MissingUpdateInstallation {
                 ValueFromPipeline=$True,
                 ValueFromPipelineByPropertyName=$True)]  # End Parameter
             [String[]]$ComputerName = "$env:COMPUTERNAME.$((Get-CimInstance -ClassName Win32_ComputerSystem).Domain)",
-
+ 
+            [Parameter(
+                Mandatory=$False,
+                Position=1,
+                ValueFromPipeline=$False
+            )]  # End Parameter
+            [String[]]$KBs,
+ 
             [ValidateNotNull()]
             [System.Management.Automation.PSCredential]
             [System.Management.Automation.Credential()]
             [Parameter(ParameterSetName="Remote")]
             $Credential = [System.Management.Automation.PSCredential]::Empty,
-
+ 
             [Parameter(
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
             [Int32]$Seconds = 90,
-
+ 
             [Parameter(
                 Mandatory=$False,
                 ValueFromPipeline=$False
             )]  # End Parameter
             [Int32]$RetryCount = 3,
-
+ 
             [Parameter(
                 ParameterSetName="Remote",
                 Mandatory=$False)]  # End Parameter
             [Switch][Bool]$UseSSL
         )  # End param
-
+ 
 BEGIN {
-
+ 
     $Return = @()
     $NotReachable = @()
-
+ 
     $ConfirmSSL = $False
     If ($UseSSL.IsPresent) {
-
+ 
         $ConfirmSSL = $True
-
+ 
     }  # End If
-
+ 
 } PROCESS {
-
+ 
     If ($PSCmdlet.ParameterSetName -eq "Remote") {
-
+ 
         Write-Verbose "Builindg CIM Sessions for $ComputerName"
         $CIMSession = New-CimSession -ComputerName $ComputerName -Credential $Credential -SessionOption (New-CIMSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -UseSsl:$ConfirmSSL) -ErrorAction SilentlyContinue
         $CIMConnections = (Get-CimSession).ComputerName
         ForEach ($C in $ComputerName) {
-
+ 
             If ($C -notin $CIMConnections) {
 
-                $NotReachable += $C 
-
+                $NotReachable += $C
+ 
             }  # End If
-
-        }  # End ForEach
-
-
+ 
+        }  # End ForEach 
+ 
     }  # End If
-
+ 
     Write-Verbose "Getting the missing updates from SCCM clients"
     If ($CIMSession) {
-
+ 
         Write-Output "[*] Getting missing updates on $ComputerName"
         [CimInstance[]]$MissingUpdates = Get-CimInstance -CimSession $CIMSession -NameSpace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -Filter "ComplianceState=0" -ErrorAction Stop
-
+ 
     } Else {
            
         Write-Output "[*] Getting Missing updates on $env:COMPUTERNAME"
         [CimInstance[]]$MissingUpdates = Get-CimInstance -NameSpace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -Filter "ComplianceState=0"
-
+ 
     }  # End If Else
-
-
+ 
+ 
     If ($Null -eq $MissingUpdates) {
-
+ 
         Write-Output "[*] No missing updates found."
-
+ 
     } Else {
-           
-        Write-Output "[*] Installing the missing updates"
+ 
+        If ($PSBoundParameters.ContainsKey('KBs')) {
+ 
+            [CimInstance[]]$MissingUpdates = $MissingUpdates | Where-Object -FilterScript { $_.ArticleID -in $KBs.Replace("KB","") }
+ 
+        }  # End If
+          
+        Write-Output "[*] Installing the below missing updates: `n$($MissingUpdates | Select-Object -ExpandProperty ArticleID -Unique)"
         If ($CIMSession) {
 
             Invoke-CimMethod -CimSession $CIMSession -Namespace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdatesManager" -MethodName InstallUpdates -Arguments @{ CCMUpdates=[CimInstance[]]$MissingUpdates} -ErrorAction SilentlyContinue | Out-Null
-
+ 
         } Else {
-
+ 
             Invoke-CimMethod -Namespace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdatesManager" -MethodName InstallUpdates -Arguments @{ CCMUpdates=[CimInstance[]]$MissingUpdates} -ErrorAction SilentlyContinue | Out-Null
-
+ 
         }  # End If Else
-
+ 
         ForEach ($C in $ComputerName) {
-
+ 
             ForEach ($MissingUpdate in $MissingUpdates) {
-
+ 
                 $State = $MissingUpdate | Select-Object -ExpandProperty EvaluationState
                 Switch ($State) {
-
+ 
                     '0'  { $JobState = "ciJobStateNone" }
                     '1'  { $JobState = "ciJobStateAvailable" }
                     '2'  { $JobState = "ciJobStateSubmitted" }
@@ -192,8 +207,9 @@ BEGIN {
                     '21' { $JobState = "ciJobStateWaitingRetry" }
                     '22' { $JobState = "ciJobStateWaitPresModeOff" }
                     '23' { $JobState = "ciJobStateWaitForOrchestration" }
+                    
                 }  # End Switch
-
+ 
                 $Return += New-Object -TypeName PSCustomObject -Property @{
                     JobState=$JobState;
                     ComputerName=$C;
@@ -204,12 +220,13 @@ BEGIN {
                     Deadline=$MissingUpdate.Deadline;
                     UpdateID=$MissingUpdate.UpdateID;
                 }  # End New-Object -Property
-
+ 
             }  # End ForEach
-
+ 
         }  # End ForEach
-
+ 
         $NotReachable | ForEach-Object {
+        
             $Return += New-Object -TypeName PSCustomObject -Property @{
                 JobState="CIM Session could not be created";
                 ComputerName=$_;
@@ -220,60 +237,68 @@ BEGIN {
                 Deadline="CIM Session could not be created";
                 UpdateID="CIM Session could not be created";
             }  # End New-Object -Property
-
+ 
         }  # End ForEach
-
+ 
         Write-Output "[*] Waiting $Seconds seconds for updates to reach an in progress related status"
         Start-Sleep -Seconds $Seconds
-
+ 
         $Result = $True
         $Counter = 0
         While ($Result -eq $True -or $Counter -ne $RetryCount) {
-
+ 
             If ($CIMSession) {
-
+ 
                 $CCMUpdate = Get-CimInstance -CimSession $CIMSession -Namespace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate" -ErrorAction SilentlyContinue
-
+ 
             } Else {
-
+ 
                 $CCMUpdate = Get-CimInstance -Namespace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdate"
                
             }  # End If Else
-
+ 
             [Array]$UniqueStatus = $CCMUpdate | Sort-Object -Property EvalutationState -Unique
             If ([Array]$UniqueStatus.EvaluationState -Contains 13 -or $UniqueStatus -Contains 21) {
-       
+        
                 $RetryUpdate = $CCMUpdate | Where-Object -FilterScript { $_.EvalutationState -eq 13 -or $_.EvaluationState -eq 21 }
                 $RetryCIM = $CIMSession | Where-Object -FilterScript { $_.ComputerName -in $RetryUpdate.ComputerName }
-
+ 
                 Write-Output "[*] Retrying one last time the installation attempt of the missing updates"
                 Invoke-CimMethod -ComputerName $RetryCIM -Namespace "Root\CCM\ClientSDK" -ClassName "CCM_SoftwareUpdatesManager" -MethodName InstallUpdates -Arguments @{ CCMUpdates=[CimInstance[]]$MissingUpdates} -ErrorAction SilentlyContinue | Out-Null
            
                 Write-Output "[*] Waiting $Seconds Seconds for update to start"
                 Start-Sleep -Seconds $Seconds
-
+ 
             }  # End If
-
-            $Result = If (@($CCMUpdate | Where-Object -FilterScript { $_.EvaluationState -eq 2 -or $_.EvaluationState -eq 3 -or $_.EvaluationState -eq 4 -or $_.EvaluationState -eq 5 -or $_.EvaluationState -eq 6 -or $_.EvaluationState -eq 7 -or $_.EvaluationState -eq 11 }).length -ne 0) { $True } Else { $False }  
+ 
+            $Result = If (@($CCMUpdate | Where-Object -FilterScript { $_.EvaluationState -eq 2 -or $_.EvaluationState -eq 3 -or $_.EvaluationState -eq 4 -or $_.EvaluationState -eq 5 -or $_.EvaluationState -eq 6 -or $_.EvaluationState -eq 7 -or $_.EvaluationState -eq 11 }).length -ne 0) {
+            
+                $True
+                
+            } Else {
+            
+                $False
+                
+            }  # End If Else
+ 
             Start-Sleep -Seconds 5
-
             $Counter++
-
+ 
         }  # End While
-
+ 
         If ($CIMSession) {
-
+ 
             Write-Verbose "Closing CIM Sessions"
             Remove-CimSession -CimSession $CIMSession -Confirm:$False -ErrorAction SilentlyContinue
            
         }  # End If
-
+ 
     }  # End If Else
-
+ 
 } END {
-
+ 
     Return $Return
-
+ 
 }  # End B P E
-
+ 
 }  # End Function Invoke-MissingUpdateInstallation
