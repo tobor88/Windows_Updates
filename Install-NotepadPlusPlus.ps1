@@ -16,15 +16,15 @@ Switch parameter to specify you only want to download the installer
 
 
 .EXAMPLE
-Install-PowerShellCore
+Install-NotepadPlusPlus
 # This example downloads the Notepad++ installer and verifies the checksum before installing it
 
 .EXAMPLE
-Install-PowerShellCore -OutFile "$env:TEMP\npp.latest.Installer.x64.exe"
+Install-NotepadPlusPlus -OutFile "$env:TEMP\npp.latest.Installer.x64.exe"
 # This example downloads the Notepad++ installer and verifies the checksum before installing it
 
 .EXAMPLE
-Install-PowerShellCore -OutFile "$env:TEMP\npp.latest.Installer.x64.exe" -DownloadOnly
+Install-NotepadPlusPlus -OutFile "$env:TEMP\npp.latest.Installer.x64.exe" -DownloadOnly
 # This example downloads the Notepad++ installer and verifies the checksum
 
 
@@ -84,12 +84,12 @@ System.Management.Automation.PSObject
 
     $Uri = 'https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest'
     $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
-    $DownloadLink = ($GetLinks.assets | Where-Object -Property Name -like "npp.*.Installer.x64.exe").browser_download_url
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Notepad++ from GitHub"
     Try {
         
         $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $DownloadLink = ($GetLinks.assets | Where-Object -Property Name -like "npp.*.Installer.x64.exe").browser_download_url
         $DResponse = Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile
  
     } Catch {
