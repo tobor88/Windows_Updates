@@ -5,7 +5,7 @@ This cmdlet is used to install/update PowerShell Core on a machine. It can also 
 
 
 .DESCRIPTION
-Download the lates PowerShell Core installed for Windows, verify that hash and instal the file
+Download the lates PowerShell Core installed for Windows, verify that hash and install the file
 
 
 .PARAMETER OutFile
