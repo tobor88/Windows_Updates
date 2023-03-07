@@ -5,7 +5,7 @@ This cmdlet is used to install/update FileZilla Client for Windows on a machine.
 
 
 .DESCRIPTION
-Download the lates FileZilla Client installed for Windows, verify that hash and instal the file
+Download the lates FileZilla Client installed for Windows, verify that hash and install the file
 
 
 .PARAMETER OutFile
@@ -52,7 +52,7 @@ https://www.credly.com/users/roberthosborne/badges
 None
 
 
-.OUTPUS
+.OUTPUTS
 System.Management.Automation.PSObject
 #>
     [OutputType([System.Management.Automation.PSObject])]
