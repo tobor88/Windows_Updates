@@ -58,15 +58,8 @@ System.Management.Automation.PSObject
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
         param(
-            [Parameter(
+           [Parameter(
                 Position=0,
-                Mandatory=$True,
-                ValueFromPipeline=$False,
-                HelpMessage="Enter the version number to upgrade WinSCP too `nEXAMPLE: 5.21.7")]  # End Parameter
-            [String]$Version,
- 
-            [Parameter(
-                Position=1,
                 Mandatory=$False,
                 ValueFromPipeline=$False)]  # End Parameter
             [ValidateScript({$_ -like "*.exe"})]
@@ -77,27 +70,33 @@ System.Management.Automation.PSObject
             [Switch][Bool]$DownloadOnly
         )   # End param
  
-    Try {
-
-        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.3"
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
-
-    } Catch {
-
-        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-
-    }  # End Try Catch
-    
     $DLUserAgent = "Wget"
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
-    $Uri = 'https://winscp.net/download/WinSCP-$Version-Setup.exe'
+    $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+    $DlUrl = https://winscp.net/eng/download.php
+    $Version = ((Invoke-WebRequest -Uri $DlUrl -UseBasicParsing -Method GET -UserAgent $UserAgent -ErrorAction Stop).Links | Where-Object -FilterScript { $_.outerHTML -like "*List of all changes*" }).href.Split('=')[-1]
+    $Uri = https://winscp.net/download/WinSCP-$Version-Setup.exe
    
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading WinSCP from their website"
     Try {
  
         $DResponse = Invoke-WebRequest -Uri $Uri -UseBasicParsing -Method GET -UserAgent $DLUserAgent -OutFile $OutFile -ContentType 'application/octet-stream'
         $CheckSum = (((Invoke-WebRequest -Uri $Uri -UseBasicParsing -Method GET -UserAgent $UserAgent).Content).Split("`n") | Select-String -Pattern "SHA-256:").ToString().Trim().Replace('</li>','').Split(" ")[-1]
+ 
+    } Catch [System.Net.WebException] {
+ 
+        $SslAvailable = Test-SslOptions -UrlDomain "winscp.net" -Port 443 | Where-Object -Property TlsProtocolIsEnabled -eq $True
+        If ($SslAvailable) {
+ 
+            Write-Output -InputObject "[i] The below protocols and algorithms can be used to communicate with 'winscp.net'"
+            $SslAvailable | Format-Table -AutoSize -Property TlsProtocol,HashAlgorithm,CipherAlgorithm,CipherStrength,KeyExchangeAlgorithm
+            Send-SendGridEmail -ToAddress $FromAddress -ToName "Advisor360 Updates - TLS Issues" -FromAddress $FromAddress -FromName "Vinebrook Technology - Advisor360" -Subject "$env:COMPUTERNAME TLS Issue Fails Update" -HTMLBody "<p>Attention Vinebrook Patching Team, <br><br>The Advisor360 server $env:COMPUTERNAME has failed to update WinSCP due to TLS issues. The negiotable TLS protocols are listed below. These all need to be enabled on $env:COMPUTERNAME if you wish to update this and other applications.<br><br><strong>Tls Protocol:</strong> $($SslAvailable.TlsProtocol)<br><strong>Hash Algorithm:</strong> $($SslAvailable.HashAlgorithm)<br><strong>CipherAlgorithm:</strong> $($SslAvailable.CipherAlgorithm)<br><strong>CipherStrength:</strong> $($SslAvailable.CipherStrength)<br><strong>KeyExchangeAlgorithm:</strong> $($SslAvailable.KeyExchangeAlgorithm)<br></p>" -APIKey $APIKey
+            Throw "[x] Enable the above protocols if you wish to upgrade WinSCP to teh latest version"
+ 
+        } Else {
+ 
+            Throw "[x] There are no TLS options available for use"
+ 
+        }  # End If Else
  
     } Catch {
  
@@ -116,7 +115,7 @@ System.Management.Automation.PSObject
         } Else {
  
             Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Executing installation of WinSCP"
-            Start-Process -FilePath $OutFile -ArgumentList @('/VERYSILENT', '/ALLUSERS' ,'NORESTART') -NoNewWindow -Wait -PassThru
+            Start-Process -FilePath $OutFile -ArgumentList @('/VERYSILENT', '/ALLUSERS' ,'NORESTART') -NoNewWindow -Wait -PassThru -ErrorAction Stop
        
         }  # End If Else
  
