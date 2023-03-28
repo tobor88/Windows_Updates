@@ -120,6 +120,7 @@ System.Management.Automation.PSObject
         } Else {
  
             Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Executing installation of Draw.IO version $Version"
+            Move-Item -Path $OutFile -Destination $OutFile.Replace("version", $Version) -Force -Confirm:$False
             Start-Process -FilePath $OutFile -ArgumentList @('/S') -NoNewWindow -Wait -PassThru
  
         }  # End If Else
