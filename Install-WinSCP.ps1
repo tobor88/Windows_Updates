@@ -14,6 +14,9 @@ Define where to save the installer file. Default location is your Temp directory
 .PARAMETER DownloadOnly
 Switch parameter to specify you only want to download the installer
 
+.PARAMETER TryTLSv13
+Switch parameter that tells PowerShell to try download file using TLSv1.3. This seems to fail as of 3/28/2023 due to 1.3 being so new
+
 
 .EXAMPLE
 Install-WinSCP
@@ -67,8 +70,21 @@ System.Management.Automation.PSObject
  
             [Parameter(
                 Mandatory=$False)]  # End Parameter
-            [Switch][Bool]$DownloadOnly
+            [Switch][Bool]$DownloadOnly,
+
+            [Parameter(
+                Mandatory=$False)]  # End Parameter
+            [Switch][Bool]$TryTLSv13
         )   # End param
+ 
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    If ($TryTLSv13.IsPresent) {
+
+        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.3"
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
+
+    }  # End If
  
     $DLUserAgent = "Wget"
     $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
