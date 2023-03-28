@@ -39,6 +39,9 @@ EnalbedBuiltinInteractiveAdd=Disabled
 .PARAMETER DownloadOnly
 Switch parameter to specify you only want to download the installer
 
+.PARAMETER TryTLSv13
+Switch parameter that tells PowerShell to try download file using TLSv1.3. This seems to fail as of 3/28/2023 due to 1.3 being so new
+
 
 .EXAMPLE
 Install-GitForWindows
@@ -99,20 +102,21 @@ System.Management.Automation.PSObject
  
             [Parameter(
                 Mandatory=$False)]  # End Parameter
-            [Switch][Bool]$DownloadOnly
+            [Switch][Bool]$DownloadOnly,
+
+            [Parameter(
+                Mandatory=$False)]  # End Parameter
+            [Switch][Bool]$TryTLSv13
         )   # End param
  
-    Try {
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    If ($TryTLSv13.IsPresent) {
 
         Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.3"
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
 
-    } Catch {
-
-        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-
-    }  # End Try Catch
+    }  # End If
     
     $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
     $Uri = 'https://api.github.com/repos/git-for-windows/git/releases/latest'
@@ -120,7 +124,7 @@ System.Management.Automation.PSObject
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Git for Windows from GitHub"
     Try {
  
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent #-ContentType 'application/json; charset=utf-8'
         $DownloadLink = ($GetLinks | ForEach-Object { $_.Assets } | Where-Object -Property Name -like "*64-bit.exe").browser_download_url
         $DResponse = Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile -Method GET -ContentType 'application/octet-stream'
  
@@ -143,7 +147,7 @@ System.Management.Automation.PSObject
         } Else {
  
             Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Executing installation of Git for Windows"
-            If ($PSBoundParameter.ContainsKey("InfFile")) {
+            If ($PSBoundParameters.ContainsKey("InfFile")) {
             
                 Start-Process -FilePath $OutFile -ArgumentList @('/SP-','/VERYSILENT', '/SUPPRESSMSGBOXES', '/NOCANCEL', '/NORESTART', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS', '/LOADINF=`"$InfFile`"') -NoNewWindow -Wait -PassThru
             
