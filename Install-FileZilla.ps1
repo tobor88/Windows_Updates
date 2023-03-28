@@ -85,7 +85,6 @@ System.Management.Automation.PSObject
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
 
     }  # End If
-        )  # End param
  
     Try {
 
