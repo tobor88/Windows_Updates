@@ -124,7 +124,7 @@ System.Management.Automation.PSObject
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Git for Windows from GitHub"
     Try {
  
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent #-ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
         $DownloadLink = ($GetLinks | ForEach-Object { $_.Assets } | Where-Object -Property Name -like "*64-bit.exe").browser_download_url
         $DResponse = Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile -Method GET -ContentType 'application/octet-stream'
  
