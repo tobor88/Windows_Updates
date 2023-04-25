@@ -94,8 +94,8 @@ System.Management.Automation.PSObject
     Try {
  
         Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading KeePass"
-        $Uri = ((Invoke-WebRequest -Uri $DownloadPage -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html').Links | Where-Object -Property "OuterHTML" -like "<a href=`"https://sourceforce.net/projects/keepass/files/KeePass%202.x/2.*Setup.exe/download*").href
-        Invoke-WebRequest -Uri $Uri -UseBasicParsing -UserAgent $DLUserAgebt -OutFile $OutFile -ContentType 'application/octet-stream' | Out-Null
+        $Uri = ((Invoke-WebRequest -Uri $DownloadPage -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False).Links | Where-Object -Property "OuterHTML" -like "<a href=`"https://sourceforce.net/projects/keepass/files/KeePass%202.x/2.*Setup.exe/download*").href
+        Invoke-WebRequest -Uri $Uri -UseBasicParsing -UserAgent $DLUserAgebt -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
  
     } Catch {
  
@@ -105,7 +105,7 @@ System.Management.Automation.PSObject
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Obtaining KeePass checksums"
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA1).Hash.ToLower()
-    $CResponse = Invoke-WebRequest -UseBasicParsing -Uri $CheckSumPage -Method GET -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8'
+    $CResponse = Invoke-WebRequest -UseBasicParsing -Uri $CheckSumPage -Method GET -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Verbose:$False
  
     $Hashes = ($CResponse.RawContent.Split("`n") | Select-String -Pattern "SHA-1:" | Out-String).Replace('<tr><td>','').Replace('</td><td><code>','').Replace('</code></td></tr>','').Replace("SHA-1:","").Replace(" ","").Trim().ToLower()
     $CheckSum = $Hashes.Split([System.Environment]::NewLine) | Where-Object -FilterScript { $_ -like $FileHash }
