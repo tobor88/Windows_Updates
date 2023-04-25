@@ -87,14 +87,14 @@ System.Management.Automation.PSObject
     }  # End If
 
     $Uri = 'https://api.github.com/repos/PowerShell/PowerShell/releases/latest'
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading PowerShell Core from GitHub"
     Try {
  
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8' -Verbose:$False
         $DownloadLink = ($GetLinks.assets | Where-Object -Property Name -like "*PowerShell-*-win-x64.msi").browser_download_url
-        $DResponse = Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile -Method GET -ContentType 'application/octet-stream'
+        Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile -Method GET -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
  
     } Catch {
  
