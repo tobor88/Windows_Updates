@@ -87,16 +87,16 @@ System.Management.Automation.PSObject
     }  # End If
  
     $DLUserAgent = "Wget"
-    $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
     $DlUrl = 'https://winscp.net/eng/download.php'
-    $Version = ((Invoke-WebRequest -Uri $DlUrl -UseBasicParsing -Method GET -UserAgent $UserAgent -ErrorAction Stop).Links | Where-Object -FilterScript { $_.outerHTML -like "*List of all changes*" }).href.Split('=')[-1]
+    $Version = ((Invoke-WebRequest -Uri $DlUrl -UseBasicParsing -Method GET -UserAgent $UserAgent -ErrorAction Stop -Verbose:$False).Links | Where-Object -FilterScript { $_.outerHTML -like "*List of all changes*" }).href.Split('=')[-1]
     $Uri = 'https://winscp.net/download/WinSCP-$Version-Setup.exe'
    
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading WinSCP from their website"
     Try {
  
-        $DResponse = Invoke-WebRequest -Uri $Uri -UseBasicParsing -Method GET -UserAgent $DLUserAgent -OutFile $OutFile -ContentType 'application/octet-stream'
-        $CheckSum = (((Invoke-WebRequest -Uri $Uri -UseBasicParsing -Method GET -UserAgent $UserAgent).Content).Split("`n") | Select-String -Pattern "SHA-256:").ToString().Trim().Replace('</li>','').Split(" ")[-1]
+        Invoke-WebRequest -Uri $Uri -UseBasicParsing -Method GET -UserAgent $DLUserAgent -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
+        $CheckSum = (((Invoke-WebRequest -Uri $Uri -UseBasicParsing -Method GET -UserAgent $UserAgent -Verbose:$False).Content).Split("`n") | Select-String -Pattern "SHA-256:").ToString().Trim().Replace('</li>','').Split(" ")[-1]
  
     } Catch [System.Net.WebException] {
  
