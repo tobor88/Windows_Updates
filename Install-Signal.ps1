@@ -70,11 +70,11 @@ System.Management.Automation.PSObject
  
             [Parameter(
                 Mandatory=$False)]  # End Parameter
-            [Switch][Bool]$DownloadOnly,
+            [Switch]$DownloadOnly,
 
             [Parameter(
                 Mandatory=$False)]  # End Parameter
-            [Switch][Bool]$TryTLSv13
+            [Switch]$TryTLSv13
         )   # End param
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
