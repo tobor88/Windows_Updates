@@ -87,11 +87,11 @@ System.Management.Automation.PSObject
     }  # End If
     
     $Uri = 'https://filezilla-project.org/download.php?show_all=1'
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Try {
  
-        $HtmlLinks = Invoke-WebRequest -Uri $Uri -UserAgent $UserAgent -UseBasicParsing -Method GET -ContentType 'text/html; charset=UTF-8'
+        $HtmlLinks = Invoke-WebRequest -Uri $Uri -UserAgent $UserAgent -UseBasicParsing -Method GET -ContentType 'text/html; charset=UTF-8' -Verbose:$False
         $Links = (($HtmlLinks.Links | Where-Object -FilterScript { $_.href -like "*win64-setup.exe*" }).href | Out-String).Replace("$([System.Environment]::NewLine)","")
         $Url = $Links.Substring(0, $Links.IndexOf('download'))
  
@@ -102,7 +102,7 @@ System.Management.Automation.PSObject
     }  # End Try Catch Catch
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading FileZilla Client"
-    $DResponse = Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $OutFile -ContentType 'application/octet-stream'
+    Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
     
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting hash values for FileZilla Client"
     $Version = (Get-Item -Path $OutFile).VersionInfo.FileVersion
