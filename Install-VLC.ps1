@@ -87,12 +87,12 @@ System.Management.Automation.PSObject
     }  # End If
     
     $Uri = 'https://www.videolan.org/vlc/download-windows.html'
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Notepad++ from GitHub"
     Try {
         
-        $GetLinks = Invoke-WebRequest -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html'
+        $GetLinks = Invoke-WebRequest -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False
         $DLLink = "https:" + $($GetLinks.Links | Where-Object -FilterScript { $_.href -like "*//get.videolan.org*" -and $_.outerHTML -like "*win64.exe*" } | Select-Object -ExpandProperty href -First 1)
         $Version = $DownloadLink.Split('-')[-2]
         $DownloadLink = "https://mirrors.ocf.berkeley.edu/videolan-ftp/vlc/$($Version)/win64/vlc-$($Version)-win64.exe"
@@ -104,9 +104,9 @@ System.Management.Automation.PSObject
     }  # End Try Catch Catch
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading VLC"
-    $DResponse = Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream'
+    Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLower()
-    $CheckSum = ((Invoke-RestMethod -UseBasicParsing -Uri $DLLink -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Method GET).Split("`n") | Where-Object -FilterScript { $_ -like "*Display Checksum*" }).Split(':')[-1].Split('<')[0].Trim()
+    $CheckSum = ((Invoke-RestMethod -UseBasicParsing -Uri $DLLink -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Method GET -Verbose:$False).Split("`n") | Where-Object -FilterScript { $_ -like "*Display Checksum*" }).Split(':')[-1].Split('<')[0].Trim()
 
     If ($FileHash -eq $CheckSum) {
 
