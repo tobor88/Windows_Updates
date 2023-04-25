@@ -87,7 +87,7 @@ System.Management.Automation.PSObject
     }  # End If
     
     $Uri = 'https://api.github.com/repos/jgraph/drawio-desktop/releases/latest'
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Notepad++ from GitHub"
     Try {
@@ -103,12 +103,12 @@ System.Management.Automation.PSObject
     }  # End Try Catch Catch
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Draw.IO"
-    $DResponse = Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream'
+    Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
     
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting hash values for Draw.IO"
     $Version = (Get-Item -Path $OutFile).VersionInfo.ProductVersion
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLower()
-    $CheckSum = ((Invoke-WebRequest -UseBasicParsing -Uri $CheckSumLink -UserAgent $UserAgent -ContentType 'application/octet-stream' -Method GET).RawContent.Split("`n") | Where-Object -FilterScript { $_ -like "draw.io-$($Version.Trim())-windows-installer.exe *"}).Split(' ')[-1]
+    $CheckSum = ((Invoke-WebRequest -UseBasicParsing -Uri $CheckSumLink -UserAgent $UserAgent -ContentType 'application/octet-stream' -Method GET -Verbose:$False).RawContent.Split("`n") | Where-Object -FilterScript { $_ -like "draw.io-$($Version.Trim())-windows-installer.exe *"}).Split(' ')[-1]
    
     If ($CheckSum -eq $FileHash) {
  
