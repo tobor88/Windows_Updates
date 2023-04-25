@@ -87,13 +87,14 @@ System.Management.Automation.PSObject
     }  # End If
 
     $DLUserAgebt = "wget"
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
-    $Uri = 'https://sourceforge.net/projects/keepass/files/latest/download'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
+    $DownloadPage = 'https://keepass.info/download.html'
     $CheckSumPage = 'https://keepass.info/integrity.html'
    
     Try {
  
         Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading KeePass"
+        $Uri = ((Invoke-WebRequest -Uri $DownloadPage -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html').Links | Where-Object -Property "OuterHTML" -like "<a href=`"https://sourceforce.net/projects/keepass/files/KeePass%202.x/2.*Setup.exe/download*").href
         Invoke-WebRequest -Uri $Uri -UseBasicParsing -UserAgent $DLUserAgebt -OutFile $OutFile -ContentType 'application/octet-stream' | Out-Null
  
     } Catch {
