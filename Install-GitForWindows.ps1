@@ -118,15 +118,15 @@ System.Management.Automation.PSObject
 
     }  # End If
     
-    $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
     $Uri = 'https://api.github.com/repos/git-for-windows/git/releases/latest'
    
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Git for Windows from GitHub"
     Try {
  
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8' -Verbose:$False
         $DownloadLink = ($GetLinks | ForEach-Object { $_.Assets } | Where-Object -Property Name -like "*64-bit.exe").browser_download_url
-        $DResponse = Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile -Method GET -ContentType 'application/octet-stream'
+        Invoke-WebRequest -Uri $DownloadLink -UseBasicParsing -UserAgent $UserAgent -OutFile $OutFile -Method GET -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
  
     } Catch {
  
