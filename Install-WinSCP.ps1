@@ -88,9 +88,9 @@ System.Management.Automation.PSObject
  
     $DLUserAgent = "Wget"
     $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
-    $DlUrl = https://winscp.net/eng/download.php
+    $DlUrl = 'https://winscp.net/eng/download.php'
     $Version = ((Invoke-WebRequest -Uri $DlUrl -UseBasicParsing -Method GET -UserAgent $UserAgent -ErrorAction Stop).Links | Where-Object -FilterScript { $_.outerHTML -like "*List of all changes*" }).href.Split('=')[-1]
-    $Uri = https://winscp.net/download/WinSCP-$Version-Setup.exe
+    $Uri = 'https://winscp.net/download/WinSCP-$Version-Setup.exe'
    
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading WinSCP from their website"
     Try {
