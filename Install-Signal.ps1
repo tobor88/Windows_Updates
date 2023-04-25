@@ -87,12 +87,12 @@ System.Management.Automation.PSObject
     }  # End If
     
     $Uri = 'https://api.github.com/repos/signalapp/Signal-Desktop/releases/latest'
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Notepad++ from GitHub"
     Try {
         
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8' -Verbose:$False
         $Version = $GetLinks.name.Replace("v", "")
         $DownloadLink = "https://updates.signal.org/desktop/signal-desktop-win-$($Version).exe"
 
@@ -103,7 +103,7 @@ System.Management.Automation.PSObject
     }  # End Try Catch Catch
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Signal"
-    $DResponse = Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream'
+    Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Successfully verified hash of newly downloaded file for Signal version $Version"
     If ($DownloadOnly.IsPresent -and (Test-Path -Path $OutFile)) {
