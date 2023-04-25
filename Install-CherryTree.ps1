@@ -87,12 +87,12 @@ System.Management.Automation.PSObject
     }  # End If
     
     $Uri = 'https://api.github.com/repos/giuspen/cherrytree/releases/latest'
-    $UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+    $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading CherryTree from GitHub"
     Try {
         
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8' -Verbose:$False
         $DownloadLink = ($GetLinks.assets | Where-Object -Property Name -like "cherrytree_*_win64_setup.exe").browser_download_url
 
     } Catch {
@@ -102,12 +102,12 @@ System.Management.Automation.PSObject
     }  # End Try Catch Catch
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading CherryTree"
-    $DResponse = Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream'
+    Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
     
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting hash values for CherryTree"
     $Version = (Get-Item -Path $OutFile).VersionInfo.ProductVersion
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLower()
-    $CheckSum = ((Invoke-WebRequest -UseBasicParsing -Uri "https://www.giuspen.net/cherrytree/#downl" -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8').RawContent.Split("`n") | Select-String -Pattern "cherrytree_$($Version.Trim())_win64_setup.exe" | Out-String).Split(" ")[-3].Split('>')[-1].Trim()
+    $CheckSum = ((Invoke-WebRequest -UseBasicParsing -Uri "https://www.giuspen.net/cherrytree/#downl" -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Verbose:$False).RawContent.Split("`n") | Select-String -Pattern "cherrytree_$($Version.Trim())_win64_setup.exe" | Out-String).Split(" ")[-3].Split('>')[-1].Trim()
 
     If ($CheckSum -eq $FileHash) {
  
