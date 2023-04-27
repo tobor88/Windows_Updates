@@ -26,6 +26,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-SccmAgent.ps1** (*Install or reinstall the SCCM Agent on a device*)
 - **Install-Signal.ps1** (*Install or update Signal after verifying checksum*)
 - **Install-VLC.ps1** (*Install or update VLC after verifying checksum*)
+- **Install-WinRAR.ps1** (*Install or update WinRAR. They do not offer a checksum. Use 7Zip its better*)
 - **Install-WinSCP.ps1** (*Install or update WinSCP after verifying checksum*)
 - **Invoke-MissingUpdateInstallation.ps1** (*Installs SCCM approved missing updates ona device*)
 - **Remove-WindowsUpdate.ps1** (*Uninstall a Windows Update by KB number on a remote or local device*)
