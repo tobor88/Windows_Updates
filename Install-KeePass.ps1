@@ -104,10 +104,10 @@ System.Management.Automation.PSObject
     }  # End Try Catch Catch
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Obtaining KeePass checksums"
-    $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA1).Hash.ToLower()
+    $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLower()
     $CResponse = Invoke-WebRequest -UseBasicParsing -Uri $CheckSumPage -Method GET -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Verbose:$False
  
-    $Hashes = ($CResponse.RawContent.Split("`n") | Select-String -Pattern "SHA-1:" | Out-String).Replace('<tr><td>','').Replace('</td><td><code>','').Replace('</code></td></tr>','').Replace("SHA-1:","").Replace(" ","").Trim().ToLower()
+    $Hashes = ($CResponse.RawContent.Split("`n") | Select-String -Pattern "SHA-256:" | Out-String).Replace('<tr><td>','').Replace('</td><td><code>','').Replace('</code></td></tr>','').Replace("SHA-1:","").Replace(" ","").Trim().ToLower()
     $CheckSum = $Hashes.Split([System.Environment]::NewLine) | Where-Object -FilterScript { $_ -like $FileHash }
  
     If ($CheckSum -eq $FileHash) {
