@@ -108,9 +108,9 @@ System.Management.Automation.PSObject
     $Version = (Get-Item -Path $OutFile).VersionInfo.FileVersion
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA512).Hash.ToLower()
     $Hashes = ($HtmlLinks.RawContent.Split("`n") | Select-String -Pattern "SHA-512 hash:" | Out-String).Replace('<p><strong>','').Replace('</p>','').Replace('</strong>','').Trim()
-    $CheckSum = $Hashes.Split(" ")[2].Replace("$([System.Environment]::NewLine)","")
+    $CheckSum = $Hashes.Split(":").Replace(' '.'').Replace('SHA-512hash','').Replace("`n","").Trim()
     
-    If ($CheckSum -eq $FileHash) {
+    If ($FileHash -in $CheckSum) {
  
         Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Successfully verified hash of newly downloaded file for FileZilla Client version $Version"
         If ($DownloadOnly.IsPresent -and (Test-Path -Path $OutFile)) {
