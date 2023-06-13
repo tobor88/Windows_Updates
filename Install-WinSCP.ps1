@@ -90,7 +90,7 @@ System.Management.Automation.PSObject
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
     $DlUrl = 'https://winscp.net/eng/download.php'
     $Version = ((Invoke-WebRequest -Uri $DlUrl -UseBasicParsing -Method GET -UserAgent $UserAgent -ErrorAction Stop -Verbose:$False).Links | Where-Object -FilterScript { $_.outerHTML -like "*List of all changes*" }).href.Split('=')[-1]
-    $Uri = 'https://winscp.net/download/WinSCP-$Version-Setup.exe'
+    $Uri = "https://winscp.net/download/WinSCP-$Version-Setup.exe"
    
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading WinSCP from their website"
     Try {
