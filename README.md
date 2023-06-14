@@ -28,6 +28,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-VLC.ps1** (*Install or update VLC after verifying checksum*)
 - **Install-WinRAR.ps1** (*Install or update WinRAR. They do not offer a checksum. Use 7Zip its better*)
 - **Install-WinSCP.ps1** (*Install or update WinSCP after verifying checksum*)
+- **Install-WinSCPNETAssembly.ps1** (*Download the WinSCP DLL required for writing PowerShell scripts with NET assembly. Checksum gets verified*)
 - **Invoke-MissingUpdateInstallation.ps1** (*Installs SCCM approved missing updates ona device*)
 - **Remove-WindowsUpdate.ps1** (*Uninstall a Windows Update by KB number on a remote or local device*)
 - **Repair-WindowsUpdate.ps1** (*Stops Windows Update related services and renames directory locations which fixes 90% of all update issues in my experience*)
