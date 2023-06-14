@@ -23,6 +23,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-KeePass.ps1** (*Install or update KeePass after verifying checksum*)
 - **Install-NotepadPlusPlus.ps1** (*Install or update Notepad++ after verifying checksum*)
 - **Install-PowerShellCore.ps1** (*Install or update PowerShell Core after verifying checksum*)
+- **Install-Putty.ps1** (*Download and install Putty and verifiy checksum*)
 - **Install-SccmAgent.ps1** (*Install or reinstall the SCCM Agent on a device*)
 - **Install-Signal.ps1** (*Install or update Signal after verifying checksum*)
 - **Install-VLC.ps1** (*Install or update VLC after verifying checksum*)
