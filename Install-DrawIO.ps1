@@ -89,7 +89,7 @@ System.Management.Automation.PSObject
     $Uri = 'https://api.github.com/repos/jgraph/drawio-desktop/releases/latest'
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Notepad++ from GitHub"
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading DrawIO from GitHub"
     Try {
         
         $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
