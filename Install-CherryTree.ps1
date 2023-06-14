@@ -86,7 +86,7 @@ System.Management.Automation.PSObject
 
     }  # End If
     
-    $Uri = 'https://api.github.com/repos/giuspen/cherrytree/releases/latest'
+    $Uri = "https://api.github.com/repos/giuspen/cherrytree/releases/latest"
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading CherryTree from GitHub"
@@ -120,7 +120,7 @@ System.Management.Automation.PSObject
  
             Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Executing installation of CherryTree version $Version"
             Move-Item -Path $OutFile -Destination $OutFile.Replace("version", $Version) -Force -Confirm:$False
-            Start-Process -FilePath $OutFile -ArgumentList @('/VERYSILENT') -NoNewWindow -Wait -PassThru
+            Start-Process -FilePath $OutFile.Replace("version", $Version) -ArgumentList @('/VERYSILENT') -NoNewWindow -Wait -PassThru
  
         }  # End If Else
  
