@@ -65,30 +65,35 @@ System.Management.Automation.PSObject
             [Parameter(
                 ParameterSetName="Installer",
                 Position=0,
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.msi"})]
             [String]$OutFile = "$env:TEMP\putty-installer.msi",
 
             [Parameter(
                 ParameterSetName="Portable",
                 Position=0,
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.exe"})]
             [String]$FilePath = "$env:TEMP\putty.exe",
  
             [Parameter(
                 Position=1,
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateSet('32','64','arm64')]
             [String]$Architecture = "64",
 
             [Parameter(
                 ParameterSetName="Portable",
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$DownloadPortable,
 
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$TryTLSv13
         )   # End param
 
