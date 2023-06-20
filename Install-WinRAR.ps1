@@ -63,17 +63,19 @@ System.Management.Automation.PSObject
         param(
             [Parameter(
                 Position=0,
-                Mandatory=$False,
-                ValueFromPipeline=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.exe"})]
             [String]$OutFile = "C:\Windows\Temp\winrar-x64-version.exe",
  
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$DownloadOnly,
  
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$TryTLSv13
         )  # End param
  
