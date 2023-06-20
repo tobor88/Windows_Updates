@@ -62,9 +62,9 @@ System.Management.Automation.PSObject
     [CmdletBinding()]
         param(
             [Parameter(
-                Position=1,
-                Mandatory=$False,
-                ValueFromPipeline=$False)]  # End Parameter
+                Position=0,
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.exe"})]
             [String]$OutFile = "$env:TEMP\KeePass-Setup.exe",
  
@@ -94,7 +94,7 @@ System.Management.Automation.PSObject
     Try {
  
         Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading KeePass"
-        $Uri = ((Invoke-WebRequest -Uri $DownloadPage -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False).Links | Where-Object -Property "OuterHTML" -like "<a href=`"https://sourceforce.net/projects/keepass/files/KeePass%202.x/2.*Setup.exe/download*").href
+        $Uri = ((Invoke-WebRequest -Uri $DownloadPage -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False).Links | Where-Object -Property "OuterHTML" -like "<a *https://sourceforge.net/projects/keepass/files/KeePass%202.x/*-Setup.exe/download*").href
         Invoke-WebRequest -Uri $Uri -UseBasicParsing -UserAgent $DLUserAgebt -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
  
     } Catch {
