@@ -62,18 +62,20 @@ System.Management.Automation.PSObject
     [CmdletBinding()]
         param(
             [Parameter(
-                Position=1,
-                Mandatory=$False,
-                ValueFromPipeline=$False)]  # End Parameter
+                Position=0,
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.msi"})]
             [String]$OutFile = "$env:TEMP\PowerShell-version-win-x64.msi",
  
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$DownloadOnly,
 
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$TryTLSv13
         )   # End param
  
