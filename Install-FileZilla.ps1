@@ -63,17 +63,19 @@ System.Management.Automation.PSObject
         param(
             [Parameter(
                 Position=0,
-                Mandatory=$False,
-                ValueFromPipeline=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.exe"})]
             [String]$OutFile = "$env:TEMP\filezilla-client-win64-setup.exe",
  
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$DownloadOnly,
 
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$TryTLSv13
         )   # End param
  
@@ -86,8 +88,8 @@ System.Management.Automation.PSObject
 
     }  # End If
     
-    $Uri = 'https://filezilla-project.org/download.php?show_all=1'
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
+    $Uri = 'https://filezilla-project.org/download.php?show_all=1'
 
     Try {
  
