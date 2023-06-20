@@ -88,24 +88,26 @@ System.Management.Automation.PSObject
         param(
             [Parameter(
                 Position=0,
-                Mandatory=$False,
-                ValueFromPipeline=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({$_ -like "*.exe"})]
             [String]$OutFile = "$env:TEMP\git-for-windows-x64-bit.exe",
             
             [Parameter(
                 Position=1,
-                Mandatory=$False,
-                ValueFromPipeline=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [ValidateScript({ ($_ -like "*.inf") -and (Test-Path -Path $_) })]
             [String]$InfFile,
  
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$DownloadOnly,
 
             [Parameter(
-                Mandatory=$False)]  # End Parameter
+                Mandatory=$False
+            )]  # End Parameter
             [Switch]$TryTLSv13
         )   # End param
  
