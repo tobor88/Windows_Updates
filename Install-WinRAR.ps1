@@ -90,8 +90,8 @@ System.Management.Automation.PSObject
  
     $OutFile = $OutFile.Replace("version",$WrVersion)
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
-    $WrVersion = (((Invoke-WebRequest -Uri https://www.rarlab.com/ -UseBasicParsing -UserAgent $UserAgent -Method GET).Links | Where-Object -FilterScript { $_.outerHTML -like "*/rar/winrar-x64-*" }).href.Split('=').Split('.') | Where-Object -FilterScript { $_ -match "(.*)\d{1,6}$"}).Split('-')[-1]
-    $DownloadLink = https://rarlab.com/rar/winrar-x64-$WrVersion.exe
+    $WrVersion = (((Invoke-WebRequest -Uri https://www.rarlab.com/ -UseBasicParsing -UserAgent $UserAgent -Method GET -Verbose:$False).Links | Where-Object -FilterScript { $_.outerHTML -like "*/rar/winrar-x64-*" }).href.Split('=').Split('.') | Where-Object -FilterScript { $_ -match "(.*)\d{1,6}$"}).Split('-')[-1]
+    $DownloadLink = "https://rarlab.com/rar/winrar-x64-$WrVersion.exe"
  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading WinRAR version $WrVersion"
     Try {
