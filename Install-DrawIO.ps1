@@ -94,7 +94,7 @@ System.Management.Automation.PSObject
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading DrawIO from GitHub"
     Try {
         
-        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8'
+        $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8' -Verbose:$False
         $DownloadLink = ($GetLinks.assets | Where-Object -Property Name -like "draw.io-*-windows-installer.exe").browser_download_url
         $CheckSumLink = ($GetLinks.assets | Where-Object -FilterScript { $_.Name -like "Files-SHA256-Hashes.txt" }).browser_download_url
    
