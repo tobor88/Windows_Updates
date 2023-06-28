@@ -95,7 +95,7 @@ System.Management.Automation.PSObject
     Try {
         
         $GetLinks = Invoke-WebRequest -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False
-        $DownloadLink = "https:" + $($GetLinks.Links | Where-Object -FilterScript { $_.href -like "*//get.videolan.org*" -and $_.outerHTML -like "*win64.exe*" } | Select-Object -ExpandProperty href -First 1)
+        $CheckSumLink = "https:" + $($GetLinks.Links | Where-Object -FilterScript { $_.href -like "*//get.videolan.org*" -and $_.outerHTML -like "*win64.exe*" } | Select-Object -ExpandProperty href -First 1)
         $Version = $DownloadLink.Split('-')[-2]
         $DownloadLink = "https://mirrors.ocf.berkeley.edu/videolan-ftp/vlc/$($Version)/win64/vlc-$($Version)-win64.exe"
 
@@ -108,7 +108,7 @@ System.Management.Automation.PSObject
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading VLC"
     Invoke-WebRequest -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -OutFile $OutFile -ContentType 'application/octet-stream' -Verbose:$False | Out-Null
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLower()
-    $CheckSum = ((Invoke-RestMethod -UseBasicParsing -Uri $DownloadLink -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Method GET -Verbose:$False).Split("`n") | Where-Object -FilterScript { $_ -like "*Display Checksum*" }).Split(':')[-1].Split('<')[0].Trim()
+    $CheckSum = ((Invoke-RestMethod -UseBasicParsing -Uri $CheckSumLink -UserAgent $UserAgent -ContentType 'text/html; charset=UTF-8' -Method GET -Verbose:$False).Split("`n") | Where-Object -FilterScript { $_ -like "*Display Checksum*" }).Split(':')[-1].Split('<')[0].Trim()
 
     If ($FileHash -eq $CheckSum) {
 
