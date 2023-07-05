@@ -21,6 +21,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-FileZilla.ps1** (*Install or update FileZilla after verifying checksum*)
 - **Install-GitForWindows.ps1** (*Install or update Git for Windows after verifying checksum*)
 - **Install-KeePass.ps1** (*Install or update KeePass after verifying checksum*)
+- **Install-NodeJS.ps1** (*Install or update NodeJS after verifying checksum*)
 - **Install-NotepadPlusPlus.ps1** (*Install or update Notepad++ after verifying checksum*)
 - **Install-PowerShellCore.ps1** (*Install or update PowerShell Core after verifying checksum*)
 - **Install-Putty.ps1** (*Download and install Putty and verifiy checksum*)
