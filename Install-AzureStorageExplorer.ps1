@@ -79,17 +79,18 @@ System.Management.Automation.PSObject
             [Switch]$TryTLSv13
         )   # End param
  
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
+    $TlsVersion = "TLSv1.2"
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     If ($TryTLSv13.IsPresent) {
  
-        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.3"
+        $TlsVersion = "TLSv1.3"
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
  
     }  # End If
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing $TlsVersion"
  
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
-    $Uri = https://api.github.com/repos/Microsoft/AzureStorageExplorer/releases/latest
+    $Uri = "https://api.github.com/repos/Microsoft/AzureStorageExplorer/releases/latest"
    
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Azure Storage Explorer from GitHub"
     Try {
