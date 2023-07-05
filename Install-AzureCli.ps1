@@ -79,14 +79,15 @@ System.Management.Automation.PSObject
             [Switch]$TryTLSv13
         )   # End param
  
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.2"
+    $TlsVersion = "TLSv1.2"
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     If ($TryTLSv13.IsPresent) {
  
-        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing TLSv1.3"
+        $TlsVersion = "TLSv1.3"
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
  
     }  # End If
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') utilizing $TlsVersion"
  
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox  
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading Azure CLI from GitHub"
@@ -108,14 +109,16 @@ System.Management.Automation.PSObject
 
     } Else {
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Executing installation of Microsoft Azure CLI for Windows"
-    If (Test-Path -Path $OutFile) {
-
-        Start-Process -FilePath "C:\Windows\System32\msiexec.exe" -ArgumentList @('/i', "$OutFile", '/quiet') -NoNewWindow -Wait -PassThru -ErrorAction Stop
-
-    } Else {
-
-        Throw "[x] Failed to download file for Azure CLI"
+        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Executing installation of Microsoft Azure CLI for Windows"
+        If (Test-Path -Path $OutFile) {
+    
+            Start-Process -FilePath "C:\Windows\System32\msiexec.exe" -ArgumentList @('/i', "$OutFile", '/quiet') -NoNewWindow -Wait -PassThru -ErrorAction Stop
+    
+        } Else {
+    
+            Throw "[x] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Failed to download file for Azure CLI"
+    
+        }  # End If Else
 
     }  # End If Else
  
