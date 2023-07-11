@@ -66,7 +66,7 @@ System.Management.Automation.PSObject
                 Mandatory=$False
             )]  # End Parameter
             [ValidateScript({$_ -like "*.msi"})]
-            [String]$OutFile = "C:\Windows\Temp\azure-cli-version.msi",
+            [String]$OutFile = "$env:TEMP\azure-cli-version.msi",
  
             [Parameter(
                 Mandatory=$False
