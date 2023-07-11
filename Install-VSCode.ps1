@@ -66,7 +66,7 @@ System.Management.Automation.PSObject
                 Position=0,
                 Mandatory=$False
             )]  # End Parameter
-            [ValidateScript({$_ -like "*.msi"})]
+            [ValidateScript({$_ -like "*.exe"})]
             [String]$OutFile = "$env:TEMP\vscode-setup-win.exe",
  
             [Parameter(
