@@ -92,7 +92,7 @@ System.Management.Automation.PSObject
     $Uri = 'https://www.videolan.org/vlc/download-windows.html'
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading VLC from GitHub"
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting  VLC download link from GitHub"
     Try {
         
         $GetLinks = Invoke-WebRequest -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False
