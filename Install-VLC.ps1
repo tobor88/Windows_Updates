@@ -97,7 +97,7 @@ System.Management.Automation.PSObject
         
         $GetLinks = Invoke-WebRequest -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False
         $CheckSumLink = "https:" + $($GetLinks.Links | Where-Object -FilterScript { $_.href -like "*//get.videolan.org*" -and $_.outerHTML -like "*win64.exe*" } | Select-Object -ExpandProperty href -First 1)
-        $Version = $DownloadLink.Split('-')[-2]
+        $Version = $CheckSumLink.Split('-')[-2]
         $DownloadLink = "https://mirrors.ocf.berkeley.edu/videolan-ftp/vlc/$($Version)/win64/vlc-$($Version)-win64.exe"
 
     } Catch {
