@@ -110,7 +110,7 @@ System.Management.Automation.PSObject
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting hash values for FileZilla Client"
     $Version = (Get-Item -Path $OutFile).VersionInfo.FileVersion
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA512).Hash.ToLower()
-    $Hashes = ($HtmlLinks.RawContent.Split("`n") | Select-String -Pattern "SHA-512 hash:" | Out-String).Replace('<p><strong>','').Replace('</p>','').Replace('</strong>','').Trim()
+    $Hashes = ($HtmlLinks.RawContent.Split("`n") | Select-String -Pattern "SHA-512 hash:" | Out-String)
     $CheckSum = $Hashes.Split(":").Replace(' ','').Split("`n") | ForEach-Object { If ($_.Length -ge 128) { $_ }}
     
     If ($CheckSum -like "*$FileHash*") {
