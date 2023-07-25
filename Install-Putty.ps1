@@ -1,11 +1,11 @@
 Function Install-Putty {
 <#
 .SYNOPSIS
-This cmdlet is used to install/update Signal for Windows. It can also be used to simply download the installer
+This cmdlet is used to install/update Putty for Windows. It can also be used to simply download the installer
 
 
 .DESCRIPTION
-Download the lates Signal installed for Windows, verify that hash and install the file
+Download the lates Putty installed for Windows, verify that hash and install the file
 
 
 .PARAMETER OutFile
@@ -19,15 +19,15 @@ Switch parameter that tells PowerShell to try download file using TLSv1.3. This 
 
 
 .EXAMPLE
-Install-Signal
+Install-Putty
 # This example downloads the Signal installer and verifies the checksum before installing it
 
 .EXAMPLE
-Install-Signal -OutFile "$env:TEMP\SignalClientx64.exe"
+Install-Putty -OutFile "$env:TEMP\putty-installer.msi"
 # This example downloads the Signal installer and verifies the checksum before installing it
 
 .EXAMPLE
-Install-Signal -OutFile "$env:TEMP\SignalClientx64.exe" -DownloadOnly
+Install-Putty -OutFile "$env:TEMP\putty-installer.exe" -DownloadOnly
 # This example downloads the Signal installer and verifies the checksum
 
 
