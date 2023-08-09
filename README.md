@@ -14,6 +14,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Get-WindowsUpdateError.ps1** (*Save a log file to your desktop containing logs on Windows Updates*)
 - **Get-WindowsUpdateErrorCode.ps1** (*Return the error code reason for failed Windows Updates, save log files to desktop, and option to run troubleshooter*)
 - **Get-UpdateHistory.p1** (*Returns information on the history of Windows Updates*)
+- **Install-7Zip.ps1** (*Install or update 7Zip. I have not found a checksum to use for verification*)
 - **Install-AzureCLI.ps1** (*Install or update the Azure CLI. I have not found a checksum to use for verification*)
 - **Install-AzureStorageExplorer.ps1** (*Install or update the Azure Storage Explorer. I have not found a checksum to use for verification*)
 - **Install-CherryTree.ps1** (*Install or update CherryTree after verifying checksum*)
