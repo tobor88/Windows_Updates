@@ -111,7 +111,7 @@ System.Management.Automation.PSObject
     $Version = (Get-Item -Path $OutFile).VersionInfo.FileVersion
     $FileHash = (Get-FileHash -Path $OutFile -Algorithm SHA512).Hash.ToLower()
     $Hashes = ($HtmlLinks.RawContent.Split("`n") | Select-String -Pattern "SHA-512 hash:" | Out-String)
-    $CheckSum = $Hashes.Split(":").Replace(' ','').Split("`n") | ForEach-Object { If ($_.Length -ge 128) { $_ }}
+    $CheckSum = $Hashes.Split(":").Replace(' ','').Split("`n") | ForEach-Object { If ($_.Length -ge 128) { $_.Replace('</p>', '') }}
     
     If ($CheckSum -like "*$FileHash*") {
  
