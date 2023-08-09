@@ -26,6 +26,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-NotepadPlusPlus.ps1** (*Install or update Notepad++ after verifying checksum*)
 - **Install-PowerShellCore.ps1** (*Install or update PowerShell Core after verifying checksum*)
 - **Install-Putty.ps1** (*Download and install Putty and verifiy checksum*)
+- **Install-RemoteDesktopManager.ps1** (*Download and install Remote Desktop Manager*)
 - **Install-SccmAgent.ps1** (*Install or reinstall the SCCM Agent on a device*)
 - **Install-Signal.ps1** (*Install or update Signal after verifying checksum*)
 - **Install-SSMS.ps1** (*Installs or updates SSMS. No checksum value that can be verified*)
