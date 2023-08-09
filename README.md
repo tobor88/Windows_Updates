@@ -27,6 +27,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-Putty.ps1** (*Download and install Putty and verifiy checksum*)
 - **Install-SccmAgent.ps1** (*Install or reinstall the SCCM Agent on a device*)
 - **Install-Signal.ps1** (*Install or update Signal after verifying checksum*)
+- **Install-SSMS.ps1** (*Installs or updates SSMS. No checksum value that can be verified*)
 - **Install-VLC.ps1** (*Install or update VLC after verifying checksum*)
 - **Install-VSCode.ps1** (*Install or update Visual Studio Code. Unable to verify checksum automatically yet*)
 - **Install-WinRAR.ps1** (*Install or update WinRAR. They do not offer a checksum. Use 7Zip its better*)
