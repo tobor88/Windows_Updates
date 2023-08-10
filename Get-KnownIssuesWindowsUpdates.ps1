@@ -465,37 +465,7 @@ https://www.credly.com/users/roberthosborne/badges
 Function Get-WindowsUpdateIssue {
 [OutputType([System.Object[]])]
 [CmdletBinding()]
-    param(
-        [Parameter(
-            Mandatory=$False,
-            HelpMessage="Enter the client id value for your application in Reddit "
-        )]  # End Parameter
-        [String]$ClientID = 'NmTMawc3OFzOAm-_WnIF7g',
-
-        [Parameter(
-            Mandatory=$False,
-            HelpMessage="Enter the client secret associated with your client id application "
-        )]  # End Parameter
-        [SecureString]$ClientSecret = $(ConvertTo-SecureString -String 'txTjevruj13RRtRZDghGoKAaqJh2rw' -AsPlainText -Force),
-
-        [Parameter(
-            Mandatory=$False,
-            HelpMessage="Enter your Reddit username "
-        )]  # End Parameter
-        [String]$UserName = 'vbtrosborne',
-
-        [Parameter(
-            Mandatory=$False,
-            HelpMessage="Enter your Reddit account password"
-        )]  # End Parameter
-        [SecureString]$Password = $(ConvertTo-SecureString -String 'DyZ46ww^Uc8qUcq^JHh' -AsPlainText -Force),
-
-        [Parameter(
-            Mandatory=$False,
-            HelpMessage="Enter the redirect uri value for your Reddit application "
-        )]  # End Parameter
-        [String]$RedirectUri = "http://127.0.0.1/"
-    )  # End param
+    param()  # End param
 
     Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Ensuring the use of TLSv1.2"
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
@@ -610,12 +580,12 @@ Function Get-WindowsUpdateIssue {
 
     }  # End ForEach
 
-    Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Building credential objects"
-    $UserCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($UserName, $Password)
-    $ClientCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($ClientID, $ClientSecret)
+    #Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Building credential objects"
+    #$UserCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($UserName, $Password)
+    #$ClientCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($ClientID, $ClientSecret)
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Retrieving access token for Reddit"
-    $env:REDDITTOKEN = New-RedditApplication -Script -Name 'WSUS-Issues' -ClientCredential $ClientCredential -RedirectUri $RedirectUri -UserAgent 'windows-update-issues:connect-reddit:v0.0.0.1' -Description 'Collect information on issues caused by Windows Updates' -UserCredential $UserCredential -Verbose:$False | Request-RedditOAuthToken -Script -PassThru -Verbose:$False
+    #Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Retrieving access token for Reddit"
+    #$env:REDDITTOKEN = New-RedditApplication -Script -Name 'WSUS-Issues' -ClientCredential $ClientCredential -RedirectUri $RedirectUri -UserAgent 'windows-update-issues:connect-reddit:v0.0.0.1' -Description 'Collect information on issues caused by Windows Updates' -UserCredential $UserCredential -Verbose:$False | Request-RedditOAuthToken -Script -PassThru -Verbose:$False
 
     # USE THIS TO SEARCH REDDIT FOR WINDOWS UPADTE POSTS. THIS IS NOT ACCURATE YET
     #$RequestUri = 'https://oauth.reddit.com/r/programming/hot'
@@ -643,6 +613,18 @@ If ($PSBoundParameters.ContainsKey('LogoFilePath')) {
 Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Obtaining update information from Microsoft"
 $PatchTuesday = Get-DayOfTheWeeksNumber -DayOfWeek Tuesday -WhichWeek 2 -Verbose:$False
 $Results = Get-WindowsUpdateIssue -Verbose:$False
+$IssueKBs = $Results | Where-Object -Property "KnownIssues" -eq "Known issues with update"
+If ($IssueKBs.KB.Count -ge 1) { 
+    
+    $PlaceHolder = $IssueKBs | Select-Object -First 1 -ExpandProperty KB
+    $EmailInfo = $IssueKBs
+
+} Else {
+    
+    $PlaceHolder = $Results | Select-Object -First 1 -ExpandProperty KB
+    $EmailInfo = $Results
+
+}  # End If Else
 
 $RawJson = (($Results | Select-Object -Property 'KB','OperatingSystem','KnownIssues',@{Label='Reference'; Expression={"<a href='$($_.Reference)' target='_blank'>$($_.KB) Release Notes</a>"}},@{Label='DownloadLink'; Expression={If ((!($_.DownloadLink)) -or $_.DownloadLink -ne "NA") { "<a href='$($_.DownloadLink)' target='_blank'>Download $($_.KB)</a>"} Else { $_.DownloadLink }}} | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
 $IssueJson = (($Results | Select-Object -Property 'KB','OperatingSystem','Issue','Workaround' | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
@@ -1135,7 +1117,7 @@ function GenerateData() {
 "@
 
 
-$MailBody = ($Results | Select-Object -Property 'KB',@{Label="Operating System"; Expression={$_.OperatingSystem}},@{Label="Known Issues"; Expression={$_.KnownIssues}},'Reference',@{Label="Download Link"; Expression={$_.DownloadLink}} | ConvertTo-Html -Head $EmailCss -PostContent $EmailPostContent -Body @"
+$MailBody = ($EmailInfo | Select-Object -Property 'KB',@{Label="Operating System"; Expression={$_.OperatingSystem}},@{Label="Known Issues"; Expression={$_.KnownIssues}},'Reference',@{Label="Download Link"; Expression={$_.DownloadLink}} | ConvertTo-Html -Head $EmailCss -PostContent $EmailPostContent -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B %Y') Windows Patch Report</h1>
 <center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo" width=800px height=200px></center>
 
