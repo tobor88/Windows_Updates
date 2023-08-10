@@ -585,7 +585,7 @@ System.Object[]
         If ($KnownIssueCheck -and (!($UnknownIssueCheck))) {
                 
             $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
-            $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<"}
+            $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
             $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
             $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
 
@@ -1126,6 +1126,14 @@ function GenerateData() {
   }
   searchTable();
 }
+
+document.getElementById("searchtext")
+    .addEventListener("keyup", function(event) {
+    event.preventDefault();
+    if (event.keyCode === 13) {
+        document.getElementById("searchbtn").click();
+    }
+});
 </script>
 "@
 
