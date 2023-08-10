@@ -582,10 +582,14 @@ System.Object[]
     
         }  # End If
 
-        $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
-        $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<"}
-        $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
-        $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+        If ($KnownIssueCheck -and (!($UnknownIssueCheck))) {
+                
+            $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
+            $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<"}
+            $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+            $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+
+        }  # End If
 
         New-Object -TypeName PSCustomObject -Property @{
             KB=$KB;
@@ -593,8 +597,8 @@ System.Object[]
             Reference=$ReleaseNotesUri;
             DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
             KnownIssues=$(If ($KnownIssueCheck -and (!($UnknownIssueCheck))) { "Known Issues with update" } Else { "No known issues" });
-            Issue=$($Issue.Replace('<p>', '').Replace('</p>', ''));
-            Workaround=$($Workaround.Replace('<p>', '').Replace('</p>', '').Split("`n") | ForEach-Object { If ($_ -notlike "") { $_ } });
+            Issue=$Issue;
+            Workaround=$Workaround;
         }  # End New-Object -Property
 
         Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
