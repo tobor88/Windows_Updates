@@ -1,11 +1,11 @@
 #Requires -Version 3.0
 <#
 .SYNOPSIS
-This script is used to report on Windows Updates that are known to cause issues
+This script is used to report on Windows Updates that are known to cause issues. It sends an email to the recipient you specify with an HTML file attached.
 
 
 .DESCRIPTION
-Obtain information on updates that are known to have issues when applied
+Obtain information on updates that are known to have issues when applied. The HTML file that is created offers more functionality than the email becuase email does not execute javascript.
 
 
 .PARAMETER HtmlFile
@@ -74,6 +74,10 @@ Define the text color in the tables data
 .PARAMETER TableBorderColor
 Define the border color in the table
 
+
+.EXAMPLE
+PS> .\Get-KnownIssuesWindowsUpdates.ps1 -ToEmail "rosborne@osbornepro.com" -FromEmail "rosborne@osbornepro.com" -SmtpServer mail.smtp2go.com -UseSSL -EmailCredential $LiveCred -LogoFilePath "$env:ONEDRIVE\Pictures\Logos\logo-banner.png" -H1BackgroundColor '#121F48' -H1TextColor '#FFFFFF' -H1BorderColor "Black" -H2TextColor '#AC1F2D' -H3BackgroundColor '#121F48' -H3FadeBackgroundColor '#AC1F2D' -H3BorderColor 'Black' -H3TextColor 'white' -TableHeaderBackgroundColor '#121F48' -TableHeaderFadeColor '#AC1F2D' -TableHeaderTextColor 'white' -TableBorderColor 'Black'
+# This example generates a report using national colors of the United States to make a professional looking report that is delivered via email
 
 .LINK
 https://github.com/tobor88
