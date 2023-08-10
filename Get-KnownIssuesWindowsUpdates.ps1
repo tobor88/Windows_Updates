@@ -584,19 +584,8 @@ System.Object[]
 
         $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
         $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value
-        ForEach ($PTag in $PTags) {
-
-            If (($PTag | Out-String) -notlike "*>Symptom<*" -and ($PTag | Out-String) -notlike "*>Workaround<*") {
-
-                $Issue = ($PTag | Select-String -Pattern '<p>(.|\n)*?<\/p>').Matches.Value.Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
-
-            } Else {
-
-                $Workaround = $PTags[-1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
-
-            }  # End If ElseIf            
-
-        }  # End ForEach
+        $Issue = $PTags[-2].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+        $Workaround = $PTags[-1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
 
         New-Object -TypeName PSCustomObject -Property @{
             KB=$KB;
