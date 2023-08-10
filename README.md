@@ -9,6 +9,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Clear-GpoRegistrySettings.ps1** (*Fix failed Windows Updates caused by policy errors*)
 - **Get-ComponentDescription** (*Return descriptino of log file based on component name*)
 - **Get-KBDownloadLink.ps1** (*Returns a download link for the defined KB article ID for the current OS version and architecture or defined version and architecture*)
+- **Get-KnownIssuesWindowsUpdates.ps1** (*Returns information on the latest months Windows patching issues*)
 - **Get-MissingDeviceUpdate.ps1** (*Return information on missing updates or approved missing SCCM updates*)
 - **Get-SccmSoftwareUpdateStatus.ps1** (*Return device in SCCM matching a certain status such as Error or Unknown*)
 - **Get-WindowsUpdateError.ps1** (*Save a log file to your desktop containing logs on Windows Updates*)
