@@ -463,6 +463,28 @@ https://www.credly.com/users/roberthosborne/badges
 }  # End Function Get-KBDownloadLink
 
 Function Get-WindowsUpdateIssue {
+<#
+.SYNOPSIS
+This script is used to collect Reddit posts on Windows Updates that caused issues
+
+
+.DESCRIPTION
+Query Reddit for posts related to Windows Updates causing issues
+
+
+.NOTES
+Author: Robert H. Osborne
+Alias: tobor
+Contact: rosborne@osbornepro.com
+
+
+.INPUTS
+None
+
+
+.OUTPUTS
+System.Object[]
+#>
 [OutputType([System.Object[]])]
 [CmdletBinding()]
     param()  # End param
@@ -470,9 +492,6 @@ Function Get-WindowsUpdateIssue {
     Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Ensuring the use of TLSv1.2"
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-    Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Importing PSRAW PowerShell module"
-    Import-Module -Name PSRAW -Force -ErrorAction SilentlyContinue -Verbose:$False
-    
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Updates"
@@ -564,8 +583,21 @@ Function Get-WindowsUpdateIssue {
         }  # End If
 
         $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
-        $Issue = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>').Matches.Value
-        $Workaround = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value.Replace($Issue, '')
+        $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value
+        ForEach ($PTag in $PTags) {
+
+            If (($PTag | Out-String) -notlike "*>Symptom<*" -and ($PTag | Out-String) -notlike "*>Workaround<*") {
+
+                $Issue = ($PTag | Select-String -Pattern '<p>(.|\n)*?<\/p>').Matches.Value.Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+
+            } Else {
+
+                $Workaround = $PTags[-1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+
+            }  # End If ElseIf            
+
+        }  # End ForEach
+
         New-Object -TypeName PSCustomObject -Property @{
             KB=$KB;
             OperatingSystem=$OSVersion;
@@ -579,18 +611,6 @@ Function Get-WindowsUpdateIssue {
         Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
 
     }  # End ForEach
-
-    #Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Building credential objects"
-    #$UserCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($UserName, $Password)
-    #$ClientCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($ClientID, $ClientSecret)
-
-    #Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Retrieving access token for Reddit"
-    #$env:REDDITTOKEN = New-RedditApplication -Script -Name 'WSUS-Issues' -ClientCredential $ClientCredential -RedirectUri $RedirectUri -UserAgent 'windows-update-issues:connect-reddit:v0.0.0.1' -Description 'Collect information on issues caused by Windows Updates' -UserCredential $UserCredential -Verbose:$False | Request-RedditOAuthToken -Script -PassThru -Verbose:$False
-
-    # USE THIS TO SEARCH REDDIT FOR WINDOWS UPADTE POSTS. THIS IS NOT ACCURATE YET
-    #$RequestUri = 'https://oauth.reddit.com/r/programming/hot'
-    #$ResultListing = Invoke-RedditRequest -Uri $RequestUri -AccessToken $env:REDDITTOKEN -Verbose:$False
-    #$Output = $ResultListing.ContentObject.data.children.data | Select-Object -Property Score,SubReddit,Title,Url
 
     Return $Output
 
