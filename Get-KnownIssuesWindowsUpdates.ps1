@@ -601,7 +601,7 @@ System.Object[]
             Workaround=$Workaround;
         }  # End New-Object -Property
 
-        Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
+        Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri,Workaround,Issue,PTag,PTags,Match -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
 
     }  # End ForEach
 
