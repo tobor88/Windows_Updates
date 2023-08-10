@@ -1167,7 +1167,7 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
 <button id="searchbtn" type="button" onclick="GenerateData()"><strong>Search KB Issues</strong></button>
 </p>
 <div class="IssueResult">
-    <table>
+    <table id="resultTable">
         <tr>
             <th class="IssueResult">KB: </th>
             <td class="tddata">
@@ -1176,7 +1176,7 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
                         <p>
                         Results will show here
                         </p>
-                </div>
+                </div></div>
             </td>
         </tr>
 
@@ -1185,7 +1185,7 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
             <td class="tddata">
                 <div class="tooltip-wrap" id="OperatingSystem">
                     <div class="tooltip-content">
-                </div>
+                </div></div>
             </td>
         </tr>
 
@@ -1194,7 +1194,7 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
             <td class="tddata">
                 <div class="tooltip-wrap" id="Issue">
                     <div class="tooltip-content">
-                </div>
+                </div></div>
             </td>
         </tr>
 
@@ -1203,17 +1203,16 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
             <td class="tddata">
                 <div class="tooltip-wrap" id="Workaround">
                     <div class="tooltip-content">
-                </div>
+                </div></div>
             </td>
         </tr>
     </table>
-</div>
 
 <h3>Windows Update Table</h3>
 <p>
 This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
 </p>
-"@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KBButton">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr class="header"><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
+"@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KBButton">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr class="header"><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace(': </button></th>', '</th>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
 $HtmlBody.Replace('<table>', '<div class="table-container"><table id="issuetable" class="data-table">').Replace('</table>', '</table></div>') | Out-File -Path $HtmlFile -Encoding utf8 -Force -WhatIf:$False -Verbose:$False
 
 Send-MailMessage -To $ToEmail -From $FromEmail -SmtpServer $SmtpServer -Credential $EmailCredential -UseSSL:$UseSSL.IsPresent -Subject "$(Get-Date -Date $PatchTuesday -Uformat '%B%e %Y') Windows Updates Report" -Body $MailBody -BodyAsHTML -DeliveryNotification OnFailure -Attachments $HtmlFile -Verbose:$False
