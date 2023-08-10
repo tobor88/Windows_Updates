@@ -172,7 +172,7 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
-        [String]$H1BorderColor = '#0B0B0B',
+        [String]$H1BorderColor = '#666666',
 
         [Parameter(
             Mandatory=$False
@@ -642,14 +642,17 @@ System.Object[]
     
         }  # End If
 
+        $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
+        $Issue = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>').Matches.Value
+        $Workaround = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value.Replace($Issue, '')
         New-Object -TypeName PSCustomObject -Property @{
             KB=$KB;
             OperatingSystem=$OSVersion;
             Reference=$ReleaseNotesUri;
             DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
             KnownIssues=$(If ($KnownIssueCheck -and (!($UnknownIssueCheck))) { "Known Issues with update" } Else { "No known issues" });
-            Issue=$();
-            Workaround=$()
+            Issue=$($Issue.Replace('<p>', '').Replace('</p>', ''));
+            Workaround=$($Workaround.Replace('<p>', '').Replace('</p>', '').Split("`n") | ForEach-Object { If ($_ -notlike "") { $_ } });
         }  # End New-Object -Property
 
         Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
@@ -691,6 +694,8 @@ $PatchTuesday = Get-DayOfTheWeeksNumber -DayOfWeek Tuesday -WhichWeek 2 -Verbose
 $Results = Get-WindowsUpdateIssue -Verbose:$False
 
 $RawJson = (($Results | Select-Object -Property 'KB','OperatingSystem','KnownIssues',@{Label='Reference'; Expression={"<a href='$($_.Reference)' target='_blank'>$($_.KB) Release Notes</a>"}},@{Label='DownloadLink'; Expression={If ((!($_.DownloadLink)) -or $_.DownloadLink -ne "NA") { "<a href='$($_.DownloadLink)' target='_blank'>Download $($_.KB)</a>"} Else { $_.DownloadLink }}} | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
+$IssueJson = (($Results | Select-Object -Property 'KB','OperatingSystem','Issue','Workaround' | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
+
 If ($RawJson[0] -eq '[') {
 
     $FormatedJson = .{
@@ -713,6 +718,27 @@ If ($RawJson[0] -eq '[') {
 
 }  # End If Else
 
+
+If ($IssueJson[0] -eq '[') {
+
+    $IssueFormatedJson = .{
+        'var issuedata = ['
+        $IssueJson | Select-Object -Skip 1
+    }
+
+    $IssueFormatedJson[-1] = '];'
+
+} Else {
+
+    $IssueFormatedJson = .{
+        'var issuedata = {'
+        $IssueJson | Select-Object -Skip 1
+    }
+
+    $IssueFormatedJson[-1] = '};' # replace last Line
+
+}  # End If Else
+
 $EmailCss = @"
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache">
@@ -728,22 +754,21 @@ body {
 position: realtive;
 margin: auto;
 width: 975px;
-background-color: #292929;
+background-color: $HtmlBodyBackgroundColor;
 }
 
 h1 {
 font-family: Arial, Helvetica, sans-serif;
-background-color: #259943;
-color: #FF7D15;
+background-color: $H1BackgroundColor;
 font-size: 28px;
 text-align: center;
 border-width: 1px;
 padding: 8px;
 border-style: solid;
-border-color: #0B0B0B;
-background: #259943;
-background: linear-gradient(#0B0B0B, #259943);
-color: #fff;
+border-color: $H1BorderColor;
+background: $H1BackgroundColor;
+background: linear-gradient($H3FadeBackgroundColor, $H1BackgroundColor);
+color: $H1TextColor;
 padding: 10px 15px;
 vertical-align: middle;
 }
@@ -762,25 +787,26 @@ text-align: center;
 border-width: 1px;
 padding: 8px;
 border-style: solid;
-border-color: #666666;
-background: #259943;
-background: linear-gradient(#0B0B0B, #259943);
-color: #fff;
+border-color: $H3BorderColor;
+background: $H3BackgroundColor;
+background: linear-gradient($H3FadeBackgroundColor, $H3BackgroundColor);
+color: $H3TextColor;
 padding: 10px 15px;
 vertical-align: middle;
 }
 
 p {
 font-family: Arial, Helvetica, sans-serif;
-color: #ECF9EC;
+color: $HtmlBodyTextColor;
+padding: 
 }
 
 table {
-color: #1690D0;
+color: $TableTextColor;
 font-family: Arial, Helvetica, sans-serif;
 font-size:12px;
 border-width: 1px;
-border-color: #259943;
+border-color: $TableBorderColor;
 border-collapse: collapse;
 position: relative;
 margin: auto;
@@ -791,12 +817,12 @@ th {
 border-width: 1px;
 padding: 8px;
 border-style: solid;
-border-color: #259943;
-background: 259943;
-background: linear-gradient(#259943, #FF7D15);
+border-color: $TableBorderColor;
+background: $TableHeaderBackgroundColor;
+background: linear-gradient($TableHeaderFadeColor, $TableHeaderBackgroundColor);
 font-weight: bold;
 font-size: 12px;
-color: #ECF9EC;
+color: $TableHeaderTextColor;
 padding: 10px 15px;
 vertical-align: middle;
 }
@@ -806,13 +832,9 @@ padding: 0.5rem 1rem;
 text-align: left;  
 border-width: 1px;
 border-style: solid;
-color: #1690D0;
-border-color: #259943;
-background-color: #0B0B0B;
-}
-
-tbody tr:nth-child(even) {
-background: $TableBodyBackgroundColor;
+color: $TableTextColor;
+border-color: $TableBorderColor;
+background-color: $TableBodyBackgroundColor;
 }
 </style>
 "@
@@ -828,8 +850,9 @@ $Css = @"
 
 <title>Windows Update Known Issues Report</title>
 
-<style type="text/css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 
+<style type="text/css">
 @charset "utf-8";
 body {
 position: realtive;
@@ -885,10 +908,39 @@ font-size: 16px;
 }
 
 #searchtext {
+font-family: Arial, Helvetica, sans-serif;
 font-size: 16px;
 padding: 12px 20px 12px 20px;
-border: 1px solid #DDD000;
+border: 1px solid #666666;
 margin: 12px;
+width: 480px;
+box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+#searchbtn {
+cursor: pointer;
+text-align: center;
+text-decoration: none;
+outline: none;
+background-color: #1690D0;
+font-size: 16px;
+font-weight: bold;
+padding: 12px 20px 12px 20px;
+border: 1px solid #666666;
+margin: 12px;
+width: 400px;
+display: inline-block;
+box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+#searchbtn:active {
+box-shadow: 0 5px #666;
+transform: translateY(4px);
+}
+
+#searchbtn:hover {
+background-color: #FF7D15;
+color: #ECF9EC;
 }
 
 #issuetable {
@@ -903,7 +955,6 @@ color: $HtmlBodyTextColor;
 .table-container {
 overflow: scroll;
 margin: auto;
-min-height: 100vh;
 }
 
 table {
@@ -919,8 +970,8 @@ width: 975px;
 }
 
 thead tr {
-border-bottom: 1px solid #ddd;
-border-top: 1px solid #ddd;
+border-bottom: 1px solid #666666;
+border-top: 1px solid #666666;
 height: 1px; 
 }
   
@@ -928,9 +979,9 @@ th {
 border-width: 1px;
 padding: 8px;
 border-style: solid;
-border-color: $TableHeaderBackgroundColor;
+border-color: $TableBorderColor;
 background: $TableHeaderBackgroundColor;
-background: linear-gradient($TableBodyBackgroundColor, $TableHeaderBackgroundColor);
+background: linear-gradient($TableHeaderFadeColor, $TableHeaderBackgroundColor);
 font-weight: bold;
 font-size: 12px;
 color: $TableHeaderTextColor;
@@ -939,11 +990,11 @@ vertical-align: middle;
 }
 
 th:not(:first-of-type) {
-border-left: 1px solid #ddd;
+border-left: 1px solid #666666;
 }  
 
 th button {
-background: linear-gradient($TableBodyBackgroundColor, $TableHeaderBackgroundColor);
+background: linear-gradient($TableHeaderFadeColor, $TableHeaderBackgroundColor);
 font-weight: bold;
 border: none;
 cursor: pointer;
@@ -980,12 +1031,12 @@ border-color: $TableBorderColor;
 background-color: $TableBodyBackgroundColor;
 }
 </style>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 "@
 
 $PostContent = @"
 <br><p><font size='2'><i>This information was generated on $(Get-Date -Format 'MM/dd/yyyy HH:mm:ss')</i></font>
 <script type="text/javascript">
+$($IssueFormatedJson)
 $($FormatedJson)
 const tableContent = document.getElementById("table-content")
 const tableButtons = document.querySelectorAll("th button");
@@ -1087,10 +1138,11 @@ function searchTable() {
 $MailBody = ($Results | Select-Object -Property 'KB',@{Label="Operating System"; Expression={$_.OperatingSystem}},@{Label="Known Issues"; Expression={$_.KnownIssues}},'Reference',@{Label="Download Link"; Expression={$_.DownloadLink}} | ConvertTo-Html -Head $EmailCss -PostContent $EmailPostContent -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B %Y') Windows Patch Report</h1>
 <center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo"></center>
+
 <h2>Overview</h2>
 <p>
 This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y')</strong>.<br>
-There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases.
+There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases that have known issues.
 Any Windows Patches that have known issues will need to be evaluated and tested to determine the impact they might cause on an environment.<br>
 </p>
 
@@ -1106,25 +1158,72 @@ This table contains a list of KBs released by Microsoft on $(Get-Date -Date $Pat
 "@ | Out-String).Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
 
 $IssueKBs = $Results | Where-Object -Property "KnownIssues" -eq "Known issues with update"
+If ($IssueKBs.KB.Count -ge 1) { $PlaceHolder = $IssueKBs | Select-Object -First 1 -ExpandProperty KB } Else { $PlaceHolder = $Results | Select-Object -First 1 -ExpandProperty KB }
 $Replace = $Results[0] | ConvertTo-Html -Fragment -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink'
 $HtmlBody = ($Results[0] | ConvertTo-Html -Head $Css -PostContent $PostContent -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink' -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y') Windows Patch Report</h1>
 <center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo"></center>
-
 <h2>Overview</h2>
 <p>
 This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y')</strong>.<br>
-There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases.
+There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases that have known issues.<br>
 Any Windows Patches that have known issues will need to be evaluated and tested to determine the impact they might cause on an environment.<br>
 </p>
 
-<h3>Windows Update Search</h3>
-<input type="text" id="searchtext" onkeyup="searchTable()" placeholder="Search KB">
+<h3>Issue and Workaround Search</h3>
+<p>
+<!-- <input type="text" id="searchtext" onkeyup="searchTable()" placeholder="Search KB"> -->
+<input type="text" id="searchtext" aria-label="kb-value" class="textbox" value="$($PlaceHolder)" placeholder="Search KB">
+<button id="searchbtn" type="button" onclick="GenerateData()"><strong>Search KB Issues</strong></button>
+</p>
+<div class="IssueResult">
+    <table>
+        <tr>
+            <th class="IssueResult">KB: </th>
+            <td class="tddata">
+                <div class="tooltip-wrap" id="KB">
+                    <div class="tooltip-content">
+                        <p>
+                        Results will show here
+                        </p>
+                </div>
+            </td>
+        </tr>
 
+        <tr>
+            <th class="IssueResult">OperatingSystem: </th>
+            <td class="tddata">
+                <div class="tooltip-wrap" id="OperatingSystem">
+                    <div class="tooltip-content">
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <th class="IssueResult">Issue: </th>
+            <td class="tddata">
+                <div class="tooltip-wrap" id="Issue">
+                    <div class="tooltip-content">
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <th class="IssueResult">Workaround: </th>
+            <td class="tddata">
+                <div class="tooltip-wrap" id="Workaround">
+                    <div class="tooltip-content">
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<h3>Windows Update Table</h3>
 <p>
 This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
 </p>
-"@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KB">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr class="header"><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
+"@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KBButton">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr class="header"><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
 $HtmlBody.Replace('<table>', '<div class="table-container"><table id="issuetable" class="data-table">').Replace('</table>', '</table></div>') | Out-File -Path $HtmlFile -Encoding utf8 -Force -WhatIf:$False -Verbose:$False
 
 Send-MailMessage -To $ToEmail -From $FromEmail -SmtpServer $SmtpServer -Credential $EmailCredential -UseSSL:$UseSSL.IsPresent -Subject "$(Get-Date -Date $PatchTuesday -Uformat '%B%e %Y') Windows Updates Report" -Body $MailBody -BodyAsHTML -DeliveryNotification OnFailure -Attachments $HtmlFile -Verbose:$False
