@@ -333,6 +333,7 @@ https://www.hackthebox.eu/profile/52286
 https://www.linkedin.com/in/roberthosborne/
 https://www.credly.com/users/roberthosborne/badges
 #>
+[OutputType([System.String])]
     [CmdletBinding(DefaultParameterSetName="Server")]
         param(
             [Parameter(
@@ -462,88 +463,38 @@ https://www.credly.com/users/roberthosborne/badges
 }  # End Function Get-KBDownloadLink
 
 Function Get-WindowsUpdateIssue {
-<#
-.SYNOPSIS
-This script is used to collect Reddit posts on Windows Updates that caused issues
-
-
-.DESCRIPTION
-Query Reddit for posts related to Windows Updates causing issues
-
-
-.PARAMETER ClientID
-Define the client ID for your Reddit application found at https://www.reddit.com/prefs/apps/
-
-.PARAMETER ClientSecret
-Define the client secret for your Reddit application found at https://www.reddit.com/prefs/apps/
-
-.PARAMETER UserName
-Define your Reddit username you log into their site with
-
-.PARAMETER Password
-Define your Reddit password you log into their site with
-
-.PARAMETER RedirectUri
-Define the Redirect URI for your Reddit script application at https://www.reddit.com/prefs/apps/
-
-
-.NOTES
-Author: Robert H. Osborne
-Contact: rosborne@osbornepro.com
-
-
-.LINK
-https://github.com/tobor88
-https://github.com/osbornepro
-https://www.powershellgallery.com/profiles/tobor
-https://osbornepro.com
-https://writeups.osbornepro.com
-https://encrypit.osbornepro.com
-https://btpssecpack.osbornepro.com
-https://www.powershellgallery.com/profiles/tobor
-https://www.hackthebox.eu/profile/52286
-https://www.linkedin.com/in/roberthosborne/
-https://www.credly.com/users/roberthosborne/badges
-
-
-.INPUTS
-None
-
-
-.OUTPUTS
-System.Object[]
-#>
+[OutputType([System.Object[]])]
 [CmdletBinding()]
     param(
-#        [Parameter(
-#            Mandatory=$False,
-#            HelpMessage="Enter the client id value for your application in Reddit "
-#        )]  # End Parameter
-#        [String]$ClientID,
-#
-#        [Parameter(
-#            Mandatory=$False,
-#            HelpMessage="Enter the client secret associated with your client id application "
-#        )]  # End Parameter
-#        [SecureString]$ClientSecret,
-#
-#        [Parameter(
-#            Mandatory=$False,
-#            HelpMessage="Enter your Reddit username "
-#        )]  # End Parameter
-#        [String]$UserName,
-#
-#        [Parameter(
-#            Mandatory=$False,
-#            HelpMessage="Enter your Reddit account password"
-#        )]  # End Parameter
-#        [SecureString]$Password,
-#
-#        [Parameter(
-#            Mandatory=$False,
-#            HelpMessage="Enter the redirect uri value for your Reddit application "
-#        )]  # End Parameter
-#        [String]$RedirectUri = "http://127.0.0.1/"
+        [Parameter(
+            Mandatory=$False,
+            HelpMessage="Enter the client id value for your application in Reddit "
+        )]  # End Parameter
+        [String]$ClientID = 'NmTMawc3OFzOAm-_WnIF7g',
+
+        [Parameter(
+            Mandatory=$False,
+            HelpMessage="Enter the client secret associated with your client id application "
+        )]  # End Parameter
+        [SecureString]$ClientSecret = $(ConvertTo-SecureString -String 'txTjevruj13RRtRZDghGoKAaqJh2rw' -AsPlainText -Force),
+
+        [Parameter(
+            Mandatory=$False,
+            HelpMessage="Enter your Reddit username "
+        )]  # End Parameter
+        [String]$UserName = 'vbtrosborne',
+
+        [Parameter(
+            Mandatory=$False,
+            HelpMessage="Enter your Reddit account password"
+        )]  # End Parameter
+        [SecureString]$Password = $(ConvertTo-SecureString -String 'DyZ46ww^Uc8qUcq^JHh' -AsPlainText -Force),
+
+        [Parameter(
+            Mandatory=$False,
+            HelpMessage="Enter the redirect uri value for your Reddit application "
+        )]  # End Parameter
+        [String]$RedirectUri = "http://127.0.0.1/"
     )  # End param
 
     Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Ensuring the use of TLSv1.2"
@@ -659,12 +610,12 @@ System.Object[]
 
     }  # End ForEach
 
-    #Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Building credential objects"
-    #$UserCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($UserName, $Password)
-    #$ClientCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($ClientID, $ClientSecret)
+    Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Building credential objects"
+    $UserCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($UserName, $Password)
+    $ClientCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList @($ClientID, $ClientSecret)
 
-    #Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Retrieving access token for Reddit"
-    #$env:REDDITTOKEN = New-RedditApplication -Script -Name 'WSUS-Issues' -ClientCredential $ClientCredential -RedirectUri $RedirectUri -UserAgent 'windows-update-issues:connect-reddit:v0.0.0.1' -Description 'Collect information on issues caused by Windows Updates' -UserCredential $UserCredential -Verbose:$False | Request-RedditOAuthToken -Script -PassThru -Verbose:$False
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Retrieving access token for Reddit"
+    $env:REDDITTOKEN = New-RedditApplication -Script -Name 'WSUS-Issues' -ClientCredential $ClientCredential -RedirectUri $RedirectUri -UserAgent 'windows-update-issues:connect-reddit:v0.0.0.1' -Description 'Collect information on issues caused by Windows Updates' -UserCredential $UserCredential -Verbose:$False | Request-RedditOAuthToken -Script -PassThru -Verbose:$False
 
     # USE THIS TO SEARCH REDDIT FOR WINDOWS UPADTE POSTS. THIS IS NOT ACCURATE YET
     #$RequestUri = 'https://oauth.reddit.com/r/programming/hot'
@@ -840,7 +791,6 @@ background-color: $TableBodyBackgroundColor;
 "@
 
 $EmailPostContent = "<br><p><font size='2'><i>This information was generated on $(Get-Date -Format 'MM/dd/yyyy HH:mm:ss')</i></font>"
-
 $Css = @"
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache">
@@ -946,6 +896,9 @@ color: #ECF9EC;
 #issuetable {
 border-collapse: collapse;
 }
+#resultTable {
+border-collapse: collapse;
+}
 
 p {
 font-family: Arial, Helvetica, sans-serif;
@@ -1036,8 +989,13 @@ background-color: $TableBodyBackgroundColor;
 $PostContent = @"
 <br><p><font size='2'><i>This information was generated on $(Get-Date -Format 'MM/dd/yyyy HH:mm:ss')</i></font>
 <script type="text/javascript">
+addEventListener("fetch", event => {
+    return event.respondWith(handleRequest(event.request))
+})
 $($IssueFormatedJson)
+
 $($FormatedJson)
+
 const tableContent = document.getElementById("table-content")
 const tableButtons = document.querySelectorAll("th button");
 
@@ -1132,12 +1090,54 @@ function searchTable() {
     }
   }
 }
+
+async function handleRequest(request) {
+    return new Response(js, {
+        headers: {
+            "content-type": "text/javascript",
+        },
+    })
+}
+
+function noRecord(textMessage) {
+  document.getElementById("KB").innerHTML = textMessage;
+  document.getElementById("OperatingSystem").innerHTML = textMessage;
+  document.getElementById("Issue").innerHTML = textMessage;
+  document.getElementById("Workaround").innerHTML = textMessage;
+}
+
+function GenerateData() {
+  var textboxValue = document.getElementById("searchtext").value;
+  var foundData = issuedata.find(function (item){
+    return item.KB === textboxValue;
+  });
+  if (typeof foundData === 'undefined') {
+    document.getElementById("searchtext").value = '';
+    document.getElementById("KB").innerHTML = 'No data found for KB <strong style="color:Red;">' + textboxValue.toLowerCase() + ' </strong>Check your KB against the values in the table';
+    noRecord('No Record Found - undefined');
+  } 
+  else if (typeof foundData === 'null'){
+    document.getElementById("searchtext").value = '';
+    document.getElementById("KB").innerHTML = 'No data found for KB <strong style="color: Red;">' + textboxValue.toLowerCase() + ' </strong>Check your KB against the values in the table';
+    noRecord('No Record Found - null');
+  }
+  else
+  {
+    noRecord('Fetching Information... Please wait >>> Error returning issue data');
+    document.getElementById("KB").innerHTML = 'Article ID: <strong style="color: #259943;">' + foundData.KB + '</strong>';
+    document.getElementById("OperatingSystem").innerHTML = 'OS Affected: <strong style="color: #259943;">' + foundData.OperatingSystem + '</strong>';
+    document.getElementById("Issue").innerHTML = 'Issue: <strong style="color: #259943;">' + foundData.Issue + '</strong>';
+    document.getElementById("Workaround").innerHTML = 'Workaround: <strong style="color: #259943;">' + foundData.Workaround + '</strong>';
+  }
+  searchTable();
+}
 </script>
 "@
 
+
 $MailBody = ($Results | Select-Object -Property 'KB',@{Label="Operating System"; Expression={$_.OperatingSystem}},@{Label="Known Issues"; Expression={$_.KnownIssues}},'Reference',@{Label="Download Link"; Expression={$_.DownloadLink}} | ConvertTo-Html -Head $EmailCss -PostContent $EmailPostContent -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B %Y') Windows Patch Report</h1>
-<center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo"></center>
+<center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo" width=800px height=200px></center>
 
 <h2>Overview</h2>
 <p>
@@ -1162,7 +1162,7 @@ If ($IssueKBs.KB.Count -ge 1) { $PlaceHolder = $IssueKBs | Select-Object -First 
 $Replace = $Results[0] | ConvertTo-Html -Fragment -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink'
 $HtmlBody = ($Results[0] | ConvertTo-Html -Head $Css -PostContent $PostContent -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink' -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y') Windows Patch Report</h1>
-<center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo"></center>
+<center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo" width=800px height=200px></center>
 <h2>Overview</h2>
 <p>
 This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y')</strong>.<br>
@@ -1172,7 +1172,6 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
 
 <h3>Issue and Workaround Search</h3>
 <p>
-<!-- <input type="text" id="searchtext" onkeyup="searchTable()" placeholder="Search KB"> -->
 <input type="text" id="searchtext" aria-label="kb-value" class="textbox" value="$($PlaceHolder)" placeholder="Search KB">
 <button id="searchbtn" type="button" onclick="GenerateData()"><strong>Search KB Issues</strong></button>
 </p>
