@@ -770,14 +770,6 @@ padding: 10px 15px;
 vertical-align: middle;
 }
 
-input {
-font-family: Arial, Helvetica, sans-serif;
-width: 320px;
-padding: 2px;
-float: left;
-font-size: 16px;
-}
-
 p {
 font-family: Arial, Helvetica, sans-serif;
 color: #ECF9EC;
@@ -890,6 +882,17 @@ width: 320px;
 padding: 2px;
 float: left;
 font-size: 16px;
+}
+
+#searchtext {
+font-size: 16px;
+padding: 12px 20px 12px 20px;
+border: 1px solid #DDD000;
+margin: 12px;
+}
+
+#issuetable {
+border-collapse: collapse;
 }
 
 p {
@@ -1056,6 +1059,28 @@ window.addEventListener("load", () => {
     });
   });
 });
+
+function searchTable() {
+  // Declare variables
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("searchtext");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("issuetable");
+  tr = table.getElementsByTagName("tr");
+
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
 </script>
 "@
 
@@ -1068,10 +1093,12 @@ This report contains information on Windows Updates for <strong>$(Get-Date -Date
 There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases.
 Any Windows Patches that have known issues will need to be evaluated and tested to determine the impact they might cause on an environment.<br>
 </p>
+
 <h2>Instructions</h2>
 <p>
 Open the attached HTML file will allow you to sort the columns in the table below. More functionality will be added to this document in the future.
 </p>
+
 <h3>$(Get-Date -Date $PatchTuesday -UFormat '%B %Y') Released Windows Updates</h3>
 <p>
 This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
@@ -1083,18 +1110,22 @@ $Replace = $Results[0] | ConvertTo-Html -Fragment -Property 'KB','OperatingSyste
 $HtmlBody = ($Results[0] | ConvertTo-Html -Head $Css -PostContent $PostContent -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink' -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y') Windows Patch Report</h1>
 <center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo"></center>
+
 <h2>Overview</h2>
 <p>
 This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y')</strong>.<br>
 There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases.
 Any Windows Patches that have known issues will need to be evaluated and tested to determine the impact they might cause on an environment.<br>
 </p>
-<h3>$(Get-Date -Date $PatchTuesday -UFormat '%B %Y') Released Windows Updates</h3>
+
+<h3>Windows Update Search</h3>
+<input type="text" id="searchtext" onkeyup="searchTable()" placeholder="Search KB">
+
 <p>
 This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
 </p>
-"@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KB">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
-$HtmlBody.Replace('<table>', '<div class="table-container"><table class="data-table">').Replace('</table>', '</table></div>') | Out-File -Path $HtmlFile -Encoding utf8 -Force -WhatIf:$False -Verbose:$False
+"@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KB">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr class="header"><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
+$HtmlBody.Replace('<table>', '<div class="table-container"><table id="issuetable" class="data-table">').Replace('</table>', '</table></div>') | Out-File -Path $HtmlFile -Encoding utf8 -Force -WhatIf:$False -Verbose:$False
 
 Send-MailMessage -To $ToEmail -From $FromEmail -SmtpServer $SmtpServer -Credential $EmailCredential -UseSSL:$UseSSL.IsPresent -Subject "$(Get-Date -Date $PatchTuesday -Uformat '%B%e %Y') Windows Updates Report" -Body $MailBody -BodyAsHTML -DeliveryNotification OnFailure -Attachments $HtmlFile -Verbose:$False
 Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Sent email of the report to $ToEmail"
