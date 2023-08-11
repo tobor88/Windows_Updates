@@ -609,10 +609,11 @@ System.Object[]
 
 }  # End Function Get-WindowsUpdateIssue
 
-If ($PSBoundParameters.ContainsKey('LogoFilePath')) {
-    
-    Try {
+Try {
 
+    Test-Path -Path $LogoFilePath.FullName -ErrorAction Stop
+    Try {
+    
         $ImageBase64 = [Convert]::ToBase64String((Get-Content -Path $LogoFilePath -Encoding Byte))
 
     } Catch {
@@ -621,7 +622,11 @@ If ($PSBoundParameters.ContainsKey('LogoFilePath')) {
 
     }  # End Try Catch
 
-}  # End If
+} Catch {
+
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Company logo file was not assigned"
+
+}  # End Try Catch
 
 Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Obtaining update information from Microsoft"
 $PatchTuesday = Get-DayOfTheWeeksNumber -DayOfWeek Tuesday -WhichWeek 2 -Verbose:$False
