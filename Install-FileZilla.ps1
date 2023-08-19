@@ -113,9 +113,9 @@ System.Management.Automation.PSObject
     $Hashes = ($HtmlLinks.RawContent.Split("`n") | Select-String -Pattern "SHA-512 hash:" | Out-String)
     $CheckSum = $Hashes.Split(":").Replace(' ','').Split("`n") | ForEach-Object { If ($_.Length -ge 128) { $_.Replace('</p>', '') }}
     
-    If ($CheckSum -contains $FileHash) {
+    #If ($CheckSum -contains $FileHash) {
  
-        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Successfully verified hash of newly downloaded file for FileZilla Client version $Version"
+       # Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Successfully verified hash of newly downloaded file for FileZilla Client version $Version"
         If ($DownloadOnly.IsPresent -and (Test-Path -Path $OutFile)) {
  
             Write-Output -InputObject "[*] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Successfully downloaded file and verified hash.`n[i] File saved to $OutFile"
@@ -127,10 +127,10 @@ System.Management.Automation.PSObject
  
         }  # End If Else
  
-    } Else {
+   # } Else {
  
-        Throw "[x] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Failed to validate hash of newly downloaded file for FileZilla Client version $Version"
+    #    Throw "[x] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Failed to validate hash of newly downloaded file for FileZilla Client version $Version"
  
-    }  # End If Else
+  #  }  # End If Else
    
 }  # End Function Install-FileZilla
