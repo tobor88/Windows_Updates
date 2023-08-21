@@ -96,7 +96,7 @@ System.Management.Automation.PSObject
     Try {
         
         $GetLinks = Invoke-RestMethod -Uri $Uri -Method GET -UseBasicParsing -UserAgent $UserAgent -ContentType 'application/json; charset=utf-8' -Verbose:$False
-        $Version = $GetLinks.name.Replace("v", "")
+        $Version = ($GetLinks.html_url.Split('/')[-1]).Replace("v", "")
         $DownloadLink = "https://updates.signal.org/desktop/signal-desktop-win-$($Version).exe"
 
     } Catch {
