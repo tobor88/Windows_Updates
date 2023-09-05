@@ -91,7 +91,7 @@ System.Management.Automation.PSObject
     
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
     $VersionUri = "https://devolutions.net/remote-desktop-manager/home/download/"
-    $Version = (((Invoke-WebRequest -UseBasicParsing -Uri $VersionUri -Method GET -UserAgent $UserAgent -ContentType 'text/html' -Verbose).Content.Split("`n") | Select-String -Pattern "data-g-version=")[0] | Out-String).Trim().Split('"')[1]
+    $Version = (((Invoke-WebRequest -UseBasicParsing -Uri $VersionUri -Method GET -UserAgent $UserAgent -ContentType 'text/html' -Verbose:$False).Content.Split("`n") | Select-String -Pattern "data-g-version=")[0] | Out-String).Trim().Split('"')[1]
     $Uri = "https://cdn.devolutions.net/download/Setup.RemoteDesktopManager.$($Version).exe"
     
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Downloading RemoteDesktopManager"
