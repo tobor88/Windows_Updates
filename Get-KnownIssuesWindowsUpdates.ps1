@@ -656,19 +656,23 @@ System.Object[]
                     $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
                     If ($Match -like "*WPF*") {
 
-                        $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
+                        $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>' -AllMatches).Matches.Value
+                        $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Release Channel<" -and $_ -notmatch ">WPF<" -and $_ -notmatch ">Available<" -and $_ -notmatch ">Resolution<" -and $_ -notmatch ">Next Step<" -and $_ -notmatch ">Product Version<" -and $_ -notmatch ">Symptom<" -and $_ -like "*Windows *" }
                         $OSV = ($OSVersion -Split "Version ")[-1]
+
                         For ($i = 0; $i -lt $PTags.Count; $i++) {
 
                             If ($Next) {
 
                                 $Issue = $PTags[$i].Replace("<p>", "").Replace("</p>", "")
+                                $Next = $False
 
                             }  # End If
 
                             If ($YourOtherNext) {
 
                                 $Workaround = $PTags[$i].Replace("<p>", "").Replace("</p>", "")
+                                Break
 
                             }  # End If
 
@@ -681,10 +685,11 @@ System.Object[]
                         
                                 If ($OtherNext) {
 
+                                    $Next = $False
                                     $YourOtherNext = $True
 
                                 } Else {
-                            
+
                                     $YourOtherNext = $False
 
                                 }  # End If Else
@@ -693,8 +698,15 @@ System.Object[]
 
                             }  # End If Else
 
+                            If ($PTags[$i] -like "*<p>Windows Update and Microsoft Update</p>*") {
+
+                                Break
+
+                            }  # End If
+
                         }  # End For
 
+                        Remove-Variable -Name Next,OtherNext,YourOtherNext -WhatIf:$False -Force -Verbose:$False -ErrorAction SilentlyContinue
 
                     } Else {
                 
