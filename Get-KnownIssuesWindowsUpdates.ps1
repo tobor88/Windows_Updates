@@ -207,6 +207,11 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
+        [String]$TableHeaderFadeColor = '#666666',
+
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
         [String]$TableHeaderTextColor = '#ECF9EC',
 
         [Parameter(
@@ -496,7 +501,15 @@ System.Object[]
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Updates"
     $MsrcUri = "https://api.msrc.microsoft.com/cvrf/v2.0/updates('$(Get-Date -UFormat %Y-%b)')"
-    $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MsrcUri -Verbose:$False).Value.CvrfUrl
+    Try {
+
+        $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MsrcUri -Verbose:$False).Value.CvrfUrl
+
+    } Catch {
+
+        $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri "https://api.msrc.microsoft.com/cvrf/v2.0/updates('$(Get-Date -Date (Get-Date).AddMonths(-1) -UFormat %Y-%b)')" -Verbose:$False).Value.CvrfUrl
+
+    }  # End Try Catch
 
     Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Update Artilce ID values"
     $MicrosoftSecInfo = Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MicrosoftSecUpdateLink -Verbose:$False
@@ -515,44 +528,62 @@ System.Object[]
 
         $ReleaseNotesUri = "https://support.microsoft.com/help/$($KB.Replace('KB', ''))"
         $KBReleaseNotes = Invoke-WebRequest -UseBasicParsing -Uri $ReleaseNotesUri -Method GET -UserAgent $UserAgent -ContentType 'text/html; charset=utf-8' -Verbose:$False
-        $KnownIssueCheck = $KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Known issues in this update" }
-        $UnknownIssueCheck = $KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "(We|Microsoft) (is|are) (not currently|currently not) aware of any issues (in|with) this update." }
-        If (!($UnknownIssueCheck)) {
+        $NoIssuesKnown = $KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "(We|Microsoft) (is|are) (not currently|currently not) aware of any issues (in|with) this update." }
+        If (!($NoIssuesKnown)) {
 
-            $UnknownIssueCheck = $KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "No additional issues were documented for this release" }
+            $NoIssuesKnown = $KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "No additional issues were documented for this release" }
 
         }  # End If
 
         $OSBuild = ($KBReleaseNotes.Links.outerHTML.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "I think you" } | Out-String | Select-String -Pattern "(\d+)\.(\d+)" -Context 0).Matches.Value
-        If (!($OSBuild) -or $OSBuild -like "4.*" -or $OSBuild -like "3.*" -or $OSBuild -like "2.*") {
+        If ((!($OSBuild)) -or $OSBuild -like "4.*" -or $OSBuild -like "3.*" -or $OSBuild -like "2.*") {
 
             Try {
-                
-                $OS = ($KBReleaseNotes.Links.outerHTML.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows Server (\d+) (.*)" -Context 0}).Matches.Value.Split('<')[0].Split('(')[0].Replace(' update history', '')
-            
+
+                $OSes = ($KBReleaseNotes.Links.outerHTML.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows Server (\d+) (.*)" -Context 0}).Matches.Value.Split('<')[0].Split('(')[0].Replace(' update history', '')
+
             } Catch {
 
                 # Gets .NET Framework Operating System Applicability
                 Try {
 
-                    $OS = ((($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "$(Get-Date -Date $PatchTuesday -UFormat '%B%e, %Y') (.*) Windows (.*)" -Context 0}).Matches.Value.Split('<')[0] | Out-String | Select-String -Pattern "Windows (.*)" -Context 0).Matches.Value -Split "includes" | Select-Object -First 1).Trim().Replace(' update history', '')
+                    $OSes = ((($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "$(Get-Date -Date $PatchTuesday -UFormat '%B %e, %Y') (.*) Windows (.*)" -Context 0}).Matches.Value.Split('<')[0] | Out-String | Select-String -Pattern "Windows (.*)" -Context 0).Matches.Value -Split "includes" | Select-Object -First 1).Trim().Replace(' update history', '')
     
                 } Catch {
+                    
+                    Try {
 
-                    $OS = ($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows Server (\d+) (.*)" -Context 0}).Matches.Value.Split('<')[0].Replace(' update history', '').Replace(' - Microsoft Support', '')
+                        # Windows Server Grep
+                        $OSes = ($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows Server (\d+) (.*)" -Context 0}).Matches.Value.Split('<')[0].Replace(' update history', '').Replace(' - Microsoft Support', '')
 
-                }  # End Try Catch    If (!($OS)) {
+                    } Catch {
+
+                        # Windows Desktop Grep
+                        Try {
+
+                            $OSes = ($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows (\d+) Version (.*)" -Context 0}).Matches.Value.Split('<')[0].Replace(' update history', '').Replace(' - Microsoft Support', '')
+                            If ($OSes -like "* and *") {
+
+                                $OSes = $OSes -Split "and "
+
+                            }  # End If
+
+                        } Catch {
+
+                            Write-Warning -Message "[!] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') $KB is missing information"
+
+                        }  # End Try Catch
+
+                    }  # End Try Catch
+
+                }  # End Try Catch 
 
             }  # End Try Catch
 
         }  # End If
 
-        If ($OS) { 
-            
-            Set-Variable -Name OperatingSystem,OSVersion -Value $OS -Force -WhatIf:$False
-        
-        } Else {
-            
+        If (!($OSes)) {
+
             Switch -Wildcard ($OSBuild) {
                 
                 "*20348.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2022" -Force -WhatIf:$False }
@@ -573,35 +604,142 @@ System.Object[]
 
             }  # End Switch
 
-        }  # End If Else
+            If ($OSVersion -notlike ".NET Framework*") {
 
-        If ($OperatingSystem -notlike ".NET Framework*") {
-
-            $OperatingSystem = $OperatingSystem.Split(',')[0].Replace(' SP1', '').Replace(' SP2', '').Replace("Windows Server 2008 R2 and Windows Server 2008", "Windows Server 2008 R2").Replace('Windows 11 Version 22H2' ,'Windows 11').Replace('Windows 10 Version 21H2 and Windows 10 Version 22H2', 'Windows 10').Trim()
-            $DownloadLink = Get-KBDownloadLink -ArticleId $KB -OperatingSystem $OperatingSystem -Architecture "x64" -Verbose:$False -ErrorAction SilentlyContinue
+                $OperatingSystem = $OperatingSystem.Split(',')[0].Replace(' SP1', '').Replace(' SP2', '').Replace("Windows Server 2008 R2 and Windows Server 2008", "Windows Server 2008 R2").Replace('Windows 11 Version 22H2' ,'Windows 11').Replace('Windows 10 Version 21H2 and Windows 10 Version 22H2', 'Windows 10').Trim()
+                $DownloadLink = Get-KBDownloadLink -ArticleId $KB -OperatingSystem $OperatingSystem -Architecture "x64" -Verbose:$False -ErrorAction SilentlyContinue
     
-        }  # End If
+            }  # End If
 
-        If ($KnownIssueCheck -and (!($UnknownIssueCheck))) {
+            If (!($NoIssuesKnown)) {
                 
-            $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
-            $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
-            $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
-            $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+                $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
+                $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
+                $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ') + $(If ($PTags[1] -like "*>Note*") { "<br>$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))" } )
+                $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+                If ($PTags[1] -like "*>Note*") { 
+            
+                    $Workaround = $Workaround.Replace("$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))", "")
+                
+                }  # End If
 
+            }  # End If
+
+            New-Object -TypeName PSCustomObject -Property @{
+                KB=$KB;
+                OperatingSystem=$OSVersion;
+                Reference=$ReleaseNotesUri;
+                DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
+                KnownIssues=$(If ((!($NoIssuesKnown))) { "Known Issues with update" } Else { "No known issues" });
+                Issue=$Issue;
+                Workaround=$Workaround;
+            }  # End New-Object -Property
+    
+            Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri,Workaround,Issue,PTag,PTags,Match -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
+
+        } Else {
+
+            ForEach ($OS in $OSes) {
+
+                Set-Variable -Name OSVersion -Value $OS -Force -WhatIf:$False
+                Set-Variable -Name OperatingSystem -Value ($OS -Split "Version ")[0] -Force -WhatIf:$False
+
+                If ($OperatingSystem -notlike ".NET Framework*") {
+
+                    $OperatingSystem = $OperatingSystem.Split(',')[0].Replace(' SP1', '').Replace(' SP2', '').Replace("Windows Server 2008 R2 and Windows Server 2008", "Windows Server 2008 R2").Replace('Windows 11 Version 22H2' ,'Windows 11').Replace('Windows 10 Version 21H2 and Windows 10 Version 22H2', 'Windows 10').Trim()
+                    $DownloadLink = Get-KBDownloadLink -ArticleId $KB -OperatingSystem $OperatingSystem -Architecture "x64" -Verbose:$False -ErrorAction SilentlyContinue
+    
+                }  # End If
+
+                If (!($NoIssuesKnown)) {
+                
+                    $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
+                    If ($Match -like "*WPF*") {
+
+                        $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
+                        $OSV = ($OSVersion -Split "Version ")[-1]
+                        For ($i = 0; $i -lt $PTags.Count; $i++) {
+
+                            If ($Next) {
+
+                                $Issue = $PTags[$i].Replace("<p>", "").Replace("</p>", "")
+
+                            }  # End If
+
+                            If ($YourOtherNext) {
+
+                                $Workaround = $PTags[$i].Replace("<p>", "").Replace("</p>", "")
+
+                            }  # End If
+
+                            If ($PTags[$i] -like "*, version $($OSV.Split("H")[0])H*") {
+
+                                $Next = $True
+                                $OtherNext = $True
+
+                            } Else {
+                        
+                                If ($OtherNext) {
+
+                                    $YourOtherNext = $True
+
+                                } Else {
+                            
+                                    $YourOtherNext = $False
+
+                                }  # End If Else
+
+                                $Next = $False
+
+                            }  # End If Else
+
+                        }  # End For
+
+
+                    } Else {
+                
+                        $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
+                        $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ') + $(If ($PTags[1] -like "*>Note*") { "<br>$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))" } )
+                        $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+
+                        If ($Issue -like "*Symptom*") {
+                        
+                            $Issue = $PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ') + $(If ($PTags[1] -like "*>Note*") { "<br>$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))" } )
+                            $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0] -and $_ -notlike $PTags[1]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+                            If ($Issue -like "*Next step*") {
+
+                                $Issue = $PTags[2].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ') + $(If ($PTags[1] -like "*>Note*") { "<br>$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))" } )
+                                $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0] -and $_ -notlike $PTags[1] -and $_ -notlike $PTags[2]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
+
+                            }  # End If
+
+                        }  # End If
+                        
+                        If ($PTags[1] -like "*>Note*") { 
+            
+                            $Workaround = $Workaround.Replace("$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))", "")
+                
+                        }  # End If
+
+                    }  # End If Else
+
+                }  # End If
+
+                New-Object -TypeName PSCustomObject -Property @{
+                    KB=$KB;
+                    OperatingSystem=$OSVersion;
+                    Reference=$ReleaseNotesUri;
+                    DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
+                    KnownIssues=$(If ((!($NoIssuesKnown))) { "Known Issues with update" } Else { "No known issues" });
+                    Issue=$Issue;
+                    Workaround=$Workaround;
+                }  # End New-Object -Property
+    
+                Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri,Workaround,Issue,PTag,PTags,Match -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
+
+            }  # End ForEach
+        
         }  # End If
-
-        New-Object -TypeName PSCustomObject -Property @{
-            KB=$KB;
-            OperatingSystem=$OSVersion;
-            Reference=$ReleaseNotesUri;
-            DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
-            KnownIssues=$(If ($KnownIssueCheck -and (!($UnknownIssueCheck))) { "Known Issues with update" } Else { "No known issues" });
-            Issue=$Issue;
-            Workaround=$Workaround;
-        }  # End New-Object -Property
-
-        Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri,Workaround,Issue,PTag,PTags,Match -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
 
     }  # End ForEach
 
@@ -609,88 +747,88 @@ System.Object[]
 
 }  # End Function Get-WindowsUpdateIssue
 
-Try {
-
-    Test-Path -Path $LogoFilePath.FullName -ErrorAction Stop
     Try {
-    
-        $ImageBase64 = [Convert]::ToBase64String((Get-Content -Path $LogoFilePath -Encoding Byte))
+
+        Test-Path -Path $LogoFilePath.FullName -ErrorAction Stop | Out-Null
+        Try {
+        
+            $ImageBase64 = [Convert]::ToBase64String((Get-Content -Path $LogoFilePath -Encoding Byte))
+
+        } Catch {
+
+            $ImageBase64 = [Convert]::ToBase64String((Get-Content -Path $LogoFilePath -AsByteStream))
+
+        }  # End Try Catch
 
     } Catch {
 
-        $ImageBase64 = [Convert]::ToBase64String((Get-Content -Path $LogoFilePath -AsByteStream))
+        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Company logo file was not assigned"
 
     }  # End Try Catch
 
-} Catch {
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Obtaining update information from Microsoft"
+    $PatchTuesday = Get-DayOfTheWeeksNumber -DayOfWeek Tuesday -WhichWeek 2 -Verbose:$False
+    $Results = Get-WindowsUpdateIssue -Verbose:$False
+    $IssueKBs = $Results | Where-Object -Property "KnownIssues" -eq "Known issues with update"
+    If ($IssueKBs.KB.Count -ge 1) { 
+        
+        $PlaceHolder = $IssueKBs | Select-Object -First 1 -ExpandProperty KB
+        $EmailInfo = $IssueKBs
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Company logo file was not assigned"
+    } Else {
+        
+        $PlaceHolder = $Results | Select-Object -First 1 -ExpandProperty KB
+        $EmailInfo = $Results
 
-}  # End Try Catch
+    }  # End If Else
 
-Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Obtaining update information from Microsoft"
-$PatchTuesday = Get-DayOfTheWeeksNumber -DayOfWeek Tuesday -WhichWeek 2 -Verbose:$False
-$Results = Get-WindowsUpdateIssue -Verbose:$False
-$IssueKBs = $Results | Where-Object -Property "KnownIssues" -eq "Known issues with update"
-If ($IssueKBs.KB.Count -ge 1) { 
-    
-    $PlaceHolder = $IssueKBs | Select-Object -First 1 -ExpandProperty KB
-    $EmailInfo = $IssueKBs
+    $RawJson = (($Results | Select-Object -Property 'KB','OperatingSystem','KnownIssues',@{Label='Reference'; Expression={"<a href='$($_.Reference)' target='_blank'>$($_.KB) Release Notes</a>"}},@{Label='DownloadLink'; Expression={If ((!($_.DownloadLink)) -or $_.DownloadLink -ne "NA") { "<a href='$($_.DownloadLink)' target='_blank'>Download $($_.KB)</a>"} Else { $_.DownloadLink }}} | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
+    $IssueJson = (($Results | Select-Object -Property 'KB','OperatingSystem','Issue','Workaround' | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
 
-} Else {
-    
-    $PlaceHolder = $Results | Select-Object -First 1 -ExpandProperty KB
-    $EmailInfo = $Results
+    If ($RawJson[0] -eq '[') {
 
-}  # End If Else
+        $FormatedJson = .{
+            'const response = {
+                "kbdata": ['
+            $RawJson | Select-Object -Skip 1
+        }
 
-$RawJson = (($Results | Select-Object -Property 'KB','OperatingSystem','KnownIssues',@{Label='Reference'; Expression={"<a href='$($_.Reference)' target='_blank'>$($_.KB) Release Notes</a>"}},@{Label='DownloadLink'; Expression={If ((!($_.DownloadLink)) -or $_.DownloadLink -ne "NA") { "<a href='$($_.DownloadLink)' target='_blank'>Download $($_.KB)</a>"} Else { $_.DownloadLink }}} | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
-$IssueJson = (($Results | Select-Object -Property 'KB','OperatingSystem','Issue','Workaround' | ConvertTo-Json -Depth 3).Replace('\u0000', '')) -Split "`r`n"
+        $FormatedJson[-1] = ']};'
 
-If ($RawJson[0] -eq '[') {
+    } Else {
 
-    $FormatedJson = .{
-        'const response = {
-            "kbdata": ['
-        $RawJson | Select-Object -Skip 1
-    }
+        $FormatedJson = .{
+            'const response = {
+                "kbdata": ['
+            $RawJson | Select-Object -Skip 1
+        }
 
-    $FormatedJson[-1] = ']};'
+        $FormatedJson[-1] = ']};' # replace last Line
 
-} Else {
-
-    $FormatedJson = .{
-        'const response = {
-            "kbdata": ['
-        $RawJson | Select-Object -Skip 1
-    }
-
-    $FormatedJson[-1] = ']};' # replace last Line
-
-}  # End If Else
+    }  # End If Else
 
 
-If ($IssueJson[0] -eq '[') {
+    If ($IssueJson[0] -eq '[') {
 
-    $IssueFormatedJson = .{
-        'var issuedata = ['
-        $IssueJson | Select-Object -Skip 1
-    }
+        $IssueFormatedJson = .{
+            'var issuedata = ['
+            $IssueJson | Select-Object -Skip 1
+        }
 
-    $IssueFormatedJson[-1] = '];'
+        $IssueFormatedJson[-1] = '];'
 
-} Else {
+    } Else {
 
-    $IssueFormatedJson = .{
-        'var issuedata = {'
-        $IssueJson | Select-Object -Skip 1
-    }
+        $IssueFormatedJson = .{
+            'var issuedata = {'
+            $IssueJson | Select-Object -Skip 1
+        }
 
-    $IssueFormatedJson[-1] = '};' # replace last Line
+        $IssueFormatedJson[-1] = '};' # replace last Line
 
-}  # End If Else
+    }  # End If Else
 
-$EmailCss = @"
+    $EmailCss = @"
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta http-equiv="Pragma">
@@ -986,7 +1124,7 @@ background-color: $TableBodyBackgroundColor;
 </style>
 "@
 
-$PostContent = @"
+    $PostContent = @"
 <br><p><font size='2'><i>This information was generated on $(Get-Date -Format 'MM/dd/yyyy HH:mm:ss')</i></font>
 <script type="text/javascript">
 addEventListener("fetch", event => {
@@ -1124,10 +1262,10 @@ function GenerateData() {
   else
   {
     noRecord('Fetching Information... Please wait >>> Error returning issue data');
-    document.getElementById("KB").innerHTML = 'Article ID: <strong style="color: #259943;">' + foundData.KB + '</strong>';
-    document.getElementById("OperatingSystem").innerHTML = 'OS Affected: <strong style="color: #259943;">' + foundData.OperatingSystem + '</strong>';
-    document.getElementById("Issue").innerHTML = 'Issue: <strong style="color: #259943;">' + foundData.Issue + '</strong>';
-    document.getElementById("Workaround").innerHTML = 'Workaround: <strong style="color: #259943;">' + foundData.Workaround + '</strong>';
+    document.getElementById("KB").innerHTML = 'Article ID: <strong style="color: $TableHeaderBackgroundColor;">' + foundData.KB + '</strong>';
+    document.getElementById("OperatingSystem").innerHTML = 'OS Affected: <strong style="color: $TableHeaderBackgroundColor;">' + foundData.OperatingSystem + '</strong>';
+    document.getElementById("Issue").innerHTML = 'Issue: <strong style="color: $TableHeaderBackgroundColor;">' + foundData.Issue + '</strong>';
+    document.getElementById("Workaround").innerHTML = 'Workaround: <strong style="color: $TableHeaderBackgroundColor;">' + foundData.Workaround + '</strong>';
   }
   searchTable();
 }
@@ -1143,13 +1281,13 @@ document.getElementById("searchtext")
 "@
 
 
-$MailBody = ($EmailInfo | Select-Object -Property 'KB',@{Label="Operating System"; Expression={$_.OperatingSystem}},@{Label="Known Issues"; Expression={$_.KnownIssues}},'Reference',@{Label="Download Link"; Expression={$_.DownloadLink}} | ConvertTo-Html -Head $EmailCss -PostContent $EmailPostContent -Body @"
+    $MailBody = ($EmailInfo | Select-Object -Property 'KB',@{Label="Operating System"; Expression={$_.OperatingSystem}},@{Label="Known Issues"; Expression={$_.KnownIssues}},'Reference',@{Label="Download Link"; Expression={$_.DownloadLink}} | ConvertTo-Html -Head $EmailCss -PostContent $EmailPostContent -Body @"
 <h1>$(Get-Date -Date $PatchTuesday -Uformat '%B %Y') Windows Patch Report</h1>
 <center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo" width=800px height=200px></center>
 
 <h2>Overview</h2>
 <p>
-This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y')</strong>.<br>
+This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B %e, %Y')</strong>.<br>
 There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases that have known issues.
 Any Windows Patches that have known issues will need to be evaluated and tested to determine the impact they might cause on an environment.<br>
 </p>
@@ -1161,19 +1299,28 @@ Open the attached HTML file will allow you to sort the columns in the table belo
 
 <h3>$(Get-Date -Date $PatchTuesday -UFormat '%B %Y') Released Windows Updates</h3>
 <p>
-This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
+This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B %e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
 </p>
 "@ | Out-String).Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
 
-$IssueKBs = $Results | Where-Object -Property "KnownIssues" -eq "Known issues with update"
-If ($IssueKBs.KB.Count -ge 1) { $PlaceHolder = $IssueKBs | Select-Object -First 1 -ExpandProperty KB } Else { $PlaceHolder = $Results | Select-Object -First 1 -ExpandProperty KB }
-$Replace = $Results[0] | ConvertTo-Html -Fragment -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink'
-$HtmlBody = ($Results[0] | ConvertTo-Html -Head $Css -PostContent $PostContent -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink' -Body @"
-<h1>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y') Windows Patch Report</h1>
+    $IssueKBs = $Results | Where-Object -Property "KnownIssues" -eq "Known issues with update"
+    If ($IssueKBs.KB.Count -ge 1) { 
+    
+        $PlaceHolder = $IssueKBs | Select-Object -First 1 -ExpandProperty KB 
+        
+    } Else {
+    
+        $PlaceHolder = $Results | Select-Object -First 1 -ExpandProperty KB
+        
+    }  # End If Else
+
+    $Replace = $Results[0] | ConvertTo-Html -Fragment -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink'
+    $HtmlBody = ($Results[0] | ConvertTo-Html -Head $Css -PostContent $PostContent -Property 'KB','OperatingSystem','KnownIssues','Reference','DownloadLink' -Body @"
+<h1>$(Get-Date -Date $PatchTuesday -Uformat '%B %Y') Windows Patch Report</h1>
 <center><img src="data:image/$($LogoFilePath.Extension.Replace('.', ''));base64,$ImageBase64" alt="Company Logo" width=800px height=200px></center>
 <h2>Overview</h2>
 <p>
-This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y')</strong>.<br>
+This report contains information on Windows Updates for <strong>$(Get-Date -Date $PatchTuesday -Uformat '%B %e, %Y')</strong>.<br>
 There are a total of <strong>$($IssueKBs.KB.Count)</strong> Windows Updates in the $(Get-Date -Date $PatchTuesday -Uformat '%B %Y') patch releases that have known issues.<br>
 Any Windows Patches that have known issues will need to be evaluated and tested to determine the impact they might cause on an environment.<br>
 </p>
@@ -1227,10 +1374,12 @@ Any Windows Patches that have known issues will need to be evaluated and tested 
 
 <h3>Windows Update Table</h3>
 <p>
-This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B%e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
+This table contains a list of KBs released by Microsoft on $(Get-Date -Date $PatchTuesday -Uformat '%B %e, %Y'). The "<strong>Reference</strong>" column contains a link which can be used to read about known issues and other release notes for a released Article ID.
 </p>
 "@ | Out-String).Replace($Replace[3], "").Replace('<th>KB', '<th><button id="KBButton">KB').Replace('<th>OperatingSystem', '<th><button id="OperatingSystem">Operating System').Replace('<th>KnownIssues', '<th><button id="KnownIssues">Known Issues').Replace('<th>Reference', '<th><button id="Reference">Reference').Replace('<th>DownloadLink', '<th><button id="DownloadLink">Download Link').Replace('</th>', '</button></th>').Replace('<tr><th>', '<thead><tr class="header"><th>').Replace('</th></tr>', '</th></tr></thead><tbody id="table-content"></tbody>').Replace(': </button></th>', '</th>').Replace('<html xmlns="http://www.w3.org/1999/xhtml">','<html lang="en" xmlns="http://www.w3.org/1999/xhtml">')
-$HtmlBody.Replace('<table>', '<div class="table-container"><table id="issuetable" class="data-table">').Replace('</table>', '</table></div>') | Out-File -Path $HtmlFile -Encoding utf8 -Force -WhatIf:$False -Verbose:$False
+    $HtmlBody.Replace('<table>', '<div class="table-container"><table id="issuetable" class="data-table">').Replace('</table>', '</table></div>') | Out-File -FilePath $HtmlFile -Encoding utf8 -Force -WhatIf:$False -Verbose:$False
 
-Send-MailMessage -To $ToEmail -From $FromEmail -SmtpServer $SmtpServer -Credential $EmailCredential -UseSSL:$UseSSL.IsPresent -Subject "$(Get-Date -Date $PatchTuesday -Uformat '%B%e %Y') Windows Updates Report" -Body $MailBody -BodyAsHTML -DeliveryNotification OnFailure -Attachments $HtmlFile -Verbose:$False
-Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Sent email of the report to $ToEmail"
+    Send-MailMessage -To $ToEmail -From $FromEmail -SmtpServer $SmtpServer -Port $EmailPort -Credential $EmailCredential -UseSSL:$UseSSL.IsPresent -Subject "$(Get-Date -Date $PatchTuesday -Uformat '%B %e %Y') Windows Updates Report" -Body $MailBody -BodyAsHTML -DeliveryNotification OnFailure -Attachments $HtmlFile -Verbose:$False
+    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Sent email of the report to $ToEmail"
+
+}  # End Function Get-IssuesWindowsUpdateReport
