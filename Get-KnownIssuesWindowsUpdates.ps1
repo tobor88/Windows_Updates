@@ -42,6 +42,9 @@ Define the text color used in paragraphs
 .PARAMETER H1BackgroundColor
 Define the background color for h1 HTML values
 
+.PARAMETER H1BackgroundFadeColor
+Define the background fade color for header 1 items
+
 .PARAMETER H1TextColor
 Define the text color used in H1 elements
 
@@ -77,6 +80,15 @@ Define the text color in the tables data
 
 .PARAMETER TableBorderColor
 Define the border color in the table
+
+.PARAMETER ButtonHoverBackgroundColor
+Define the background color of the buttons after mouse hover
+
+.PARAMETER ButtonHoverTextColor
+Define the color of the text of buttons after mouse hover
+
+.PARAMETER SearchButtonBackgroundColor
+Define the background color for the buttons
 
 
 .EXAMPLE
@@ -162,7 +174,7 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
-        [String]$HtmlBodyBackgroundColor = '#292929',
+        [String]$HtmlBodyBackgroundColor='#292929',
 
         [Parameter(
             Mandatory=$False
@@ -173,6 +185,11 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
             Mandatory=$False
         )]  # End Parameter
         [String]$H1BackgroundColor = '#259943',
+
+        [Parameter(
+            Mandatpry=$False
+        )]  # End Parameter
+        [String]$H1BackgroundFadeColor = '#000000',
 
         [Parameter(
             Mandatory=$False
@@ -202,6 +219,11 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
+        [String]$H3FadeBackgroundColor = '#000000',
+
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
         [String]$H3TextColor = '#ECF9EC',
 
         [Parameter(
@@ -217,7 +239,7 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
-        [String]$TableHeaderFadeColor = '#666666',
+        [String]$TableHeaderFadeColor = '#000000',
 
         [Parameter(
             Mandatory=$False
@@ -227,12 +249,27 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
-        [String]$TableBorderColor = '#259943',
+        [String]$TableBorderColor = '#000000',
 
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
-        [String]$TableBodyBackgroundColor = '#FF7D15'
+        [String]$TableBodyBackgroundColor = '#FFE3CC',
+
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [String]$ButtonHoverBackgroundColor = '#FF7D15',
+
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [String]$ButtonHoverTextColor = '#FFFFFF',
+
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [String]$SearchButtonBackgroundColor = '#1690D0'
     )  # End param
 
 Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Loading custom cmdlets into session"
