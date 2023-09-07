@@ -20,6 +20,9 @@ Define the email address to send an email from
 .PARAMETER SmtpServer
 Define the SMTP server to send an email from
 
+.PARAMETER EmailPort
+Define the SMTP port to send the email from
+
 .PARAMETER EmailCredential
 Defeine your credentials used to send an email
 
