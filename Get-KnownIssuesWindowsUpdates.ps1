@@ -1,4 +1,5 @@
 #Requires -Version 3.0
+Function Get-IssuesWindowsUpdateReport {
 <#
 .SYNOPSIS
 This script is used to report on Windows Updates that are known to cause issues. It sends an email to the recipient you specify with an HTML file attached.
@@ -132,6 +133,12 @@ RSS FEEDS APPEAR TO NOT HAVE ANY USEFUL INFORMATION. I LEFT THIS HERE IN CASE IT
             HelpMessage="Enter the SMTP server to send the information from "
         )]  # End Parameter
         [String]$SmtpServer,
+
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [ValidateRange(1, 65535)]
+        [Int]$EmailPort = 25,
 
         [Parameter(
             Mandatory=$False
@@ -480,10 +487,27 @@ This script is used to collect Reddit posts on Windows Updates that caused issue
 Query Reddit for posts related to Windows Updates causing issues
 
 
+.PARAMETER ArticleID
+Define the KB number(s) to return information on
+
+
+.EXAMPLE
+PS> Get-WindowsUpdateIssue
+# This example returns release note information on all KBs for the latest patching month
+
+.EXAMPLE
+PS> Get-WindowsUpdateIssue
+# This example returns release note information on the defined KB for the latest patch month
+
+
 .NOTES
 Author: Robert H. Osborne
 Alias: tobor
 Contact: rosborne@osbornepro.com
+
+
+.LINK
+https://osbornepro.com/
 
 
 .INPUTS
@@ -495,39 +519,51 @@ System.Object[]
 #>
 [OutputType([System.Object[]])]
 [CmdletBinding()]
-    param()  # End param
+    param(
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [String[]]$ArticleID
+    )  # End param
 
     Write-Debug -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Ensuring the use of TLSv1.2"
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-
     $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Updates"
-    $MsrcUri = "https://api.msrc.microsoft.com/cvrf/v2.0/updates('$(Get-Date -UFormat %Y-%b)')"
-    Try {
+    If ($ArticleID) {
 
-        $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MsrcUri -Verbose:$False).Value.CvrfUrl
+        $ArticleIDs = $ArticleID
 
-    } Catch {
+    } Else {
 
-        $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri "https://api.msrc.microsoft.com/cvrf/v2.0/updates('$(Get-Date -Date (Get-Date).AddMonths(-1) -UFormat %Y-%b)')" -Verbose:$False).Value.CvrfUrl
+        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Updates"
+        $MsrcUri = "https://api.msrc.microsoft.com/cvrf/v2.0/updates('$(Get-Date -UFormat %Y-%b)')"
+        Try {
 
-    }  # End Try Catch
+            $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MsrcUri -Verbose:$False).Value.CvrfUrl
 
-    Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Update Artilce ID values"
-    $MicrosoftSecInfo = Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MicrosoftSecUpdateLink -Verbose:$False
-    $MicrosoftSecurityKBList = $MicrosoftSecInfo.Vulnerability.Remediations | ForEach-Object { 
+        } Catch {
+
+            $MicrosoftSecUpdateLink = (Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri "https://api.msrc.microsoft.com/cvrf/v2.0/updates('$(Get-Date -Date (Get-Date).AddMonths(-1) -UFormat %Y-%b)')" -Verbose:$False).Value.CvrfUrl
+
+        }  # End Try Catch
+
+        Write-Verbose -Message "[v] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Getting $(Get-Date -UFormat '%B %Y') Windows Update Artilce ID values"
+        $MicrosoftSecInfo = Invoke-RestMethod -UseBasicParsing -Method GET -ContentType 'application/json' -UserAgent $UserAgent -Uri $MicrosoftSecUpdateLink -Verbose:$False
+        $ArticleIDs = $MicrosoftSecInfo.Vulnerability.Remediations | ForEach-Object { 
         
-        If ($_.Url -and $_.Url -like "*/site/Search.aspx?q=KB*") {
+            If ($_.Url -and $_.Url -like "*/site/Search.aspx?q=KB*") {
             
-            $($_.Url.Split('=')[-1])
+                $($_.Url.Split('=')[-1])
 
-        }  # End If
+            }  # End If
 
-    } | Select-Object -Unique
+        } | Select-Object -Unique
+
+    }  # End If Else
 
     $PatchTuesday = Get-DayOfTheWeeksNumber -DayOfWeek Tuesday -WhichWeek 2 -Verbose:$False
-    $Output = ForEach ($KB in $MicrosoftSecurityKBList) {
+    $Output = ForEach ($KB in $ArticleIDs) {
 
         $ReleaseNotesUri = "https://support.microsoft.com/help/$($KB.Replace('KB', ''))"
         $KBReleaseNotes = Invoke-WebRequest -UseBasicParsing -Uri $ReleaseNotesUri -Method GET -UserAgent $UserAgent -ContentType 'text/html; charset=utf-8' -Verbose:$False
@@ -565,15 +601,10 @@ System.Object[]
                         Try {
 
                             $OSes = ($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows (\d+) Version (.*)" -Context 0}).Matches.Value.Split('<')[0].Replace(' update history', '').Replace(' - Microsoft Support', '')
-                            If ($OSes -like "* and *") {
-
-                                $OSes = $OSes -Split "and "
-
-                            }  # End If
 
                         } Catch {
 
-                            Write-Warning -Message "[!] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') $KB is missing information"
+                            $OSes = ($KBReleaseNotes.RawContent.Split("`n") | ForEach-Object { $_ | Select-String -Pattern "Windows (\d+), Version (.*)" -Context 0}).Matches.Value.Split('<')[0].Replace(' update history', '').Replace(' - Microsoft Support', '').Replace(',', '').Replace('version', 'Version')
 
                         }  # End Try Catch
 
@@ -582,6 +613,12 @@ System.Object[]
                 }  # End Try Catch 
 
             }  # End Try Catch
+
+            If ($OSes -like "* and *") {
+
+                $OSes = $OSes -Split "and "
+
+            }  # End If
 
         }  # End If
 
@@ -635,7 +672,7 @@ System.Object[]
                 DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
                 KnownIssues=$(If ((!($NoIssuesKnown))) { "Known Issues with update" } Else { "No known issues" });
                 Issue=$Issue;
-                Workaround=$Workaround;
+                Workaround=$($Workaround | Out-String);
             }  # End New-Object -Property
     
             Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri,Workaround,Issue,PTag,PTags,Match -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
@@ -651,7 +688,8 @@ System.Object[]
 
                     $OperatingSystem = $OperatingSystem.Split(',')[0].Replace(' SP1', '').Replace(' SP2', '').Replace("Windows Server 2008 R2 and Windows Server 2008", "Windows Server 2008 R2").Replace('Windows 11 Version 22H2' ,'Windows 11').Replace('Windows 10 Version 21H2 and Windows 10 Version 22H2', 'Windows 10').Trim()
                     $DownloadLink = Get-KBDownloadLink -ArticleId $KB -OperatingSystem $OperatingSystem -Architecture "x64" -Verbose:$False -ErrorAction SilentlyContinue
-    
+                    Start-Sleep -Seconds 2
+
                 }  # End If
 
                 If (!($NoIssuesKnown)) {
@@ -667,6 +705,7 @@ System.Object[]
 
                             If ($Next) {
 
+                                Write-Verbose -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Issue variable is true while `$i = $i"
                                 $Issue = $PTags[$i].Replace("<p>", "").Replace("</p>", "")
                                 $Next = $False
 
@@ -674,6 +713,7 @@ System.Object[]
 
                             If ($YourOtherNext) {
 
+                                Write-Verbose -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Workaround variable is set while `$i = $i"
                                 $Workaround = $PTags[$i].Replace("<p>", "").Replace("</p>", "")
                                 Break
 
@@ -681,6 +721,7 @@ System.Object[]
 
                             If ($PTags[$i] -like "*, version $($OSV.Split("H")[0])H*") {
 
+                                Write-Verbose -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Next and OtherNext variables set TRUE while `$i = $i"
                                 $Next = $True
                                 $OtherNext = $True
 
@@ -688,21 +729,19 @@ System.Object[]
                         
                                 If ($OtherNext) {
 
-                                    $Next = $False
+                                    Write-Verbose -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Next variable is set to FALSE and OtherNext variable set TRUE while `$i = $i"
                                     $YourOtherNext = $True
 
-                                } Else {
+                                }  # End If
 
-                                    $YourOtherNext = $False
-
-                                }  # End If Else
-
+                                Write-Verbose -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Next variable is set to FALSE while `$i = $i"
                                 $Next = $False
 
                             }  # End If Else
 
                             If ($PTags[$i] -like "*<p>Windows Update and Microsoft Update</p>*") {
 
+                                Write-Verbose -Message "[D] $(Get-Date -Format 'MM-dd-yyyy hh:mm:ss') Break statement reached while `$i = $i on WIndows Update and Microsoft Update match"
                                 Break
 
                             }  # End If
@@ -713,6 +752,7 @@ System.Object[]
 
                     } Else {
                 
+                        $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
                         $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
                         $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ') + $(If ($PTags[1] -like "*>Note*") { "<br>$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))" } )
                         $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
@@ -747,7 +787,7 @@ System.Object[]
                     DownloadLink=$(If ($DownloadLink) { $DownloadLink } Else { "NA" });
                     KnownIssues=$(If ((!($NoIssuesKnown))) { "Known Issues with update" } Else { "No known issues" });
                     Issue=$Issue;
-                    Workaround=$Workaround;
+                    Workaround=$($Workaround | Out-String);
                 }  # End New-Object -Property
     
                 Remove-Variable -Name DownloadLink,OS,OSVersion,OSBuild,KnownIssueCheck,UnknownIssueCheck,KBReleaseNotes,ReleaseNotesUri,Workaround,Issue,PTag,PTags,Match -Force -ErrorAction SilentlyContinue -Verbose:$False -WhatIf:$False
