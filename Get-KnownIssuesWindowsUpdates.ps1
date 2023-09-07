@@ -80,7 +80,7 @@ Define the border color in the table
 
 
 .EXAMPLE
-PS> .\Get-KnownIssuesWindowsUpdates.ps1 -ToEmail "rosborne@osbornepro.com" -FromEmail "rosborne@osbornepro.com" -SmtpServer mail.smtp2go.com -UseSSL -EmailCredential $LiveCred -LogoFilePath "$env:ONEDRIVE\Pictures\Logos\logo-banner.png" -H1BackgroundColor '#121F48' -H1TextColor '#FFFFFF' -H1BorderColor "Black" -H2TextColor '#AC1F2D' -H3BackgroundColor '#121F48' -H3FadeBackgroundColor '#AC1F2D' -H3BorderColor 'Black' -H3TextColor 'white' -TableHeaderBackgroundColor '#121F48' -TableHeaderFadeColor '#AC1F2D' -TableHeaderTextColor 'white' -TableBorderColor 'Black'
+PS> .\Get-KnownIssuesWindowsUpdates.ps1 -ToEmail "rosborne@osbornepro.com" -FromEmail "rosborne@osbornepro.com" -SmtpServer mail.smtp2go.com -UseSSL -EmailPort 587 -EmailCredential $LiveCred -LogoFilePath "$env:ONEDRIVE\Pictures\Logos\logo-banner.png" -H1BackgroundColor '#121F48' -H1TextColor '#FFFFFF' -H1BorderColor "Black" -H2TextColor '#AC1F2D' -H3BackgroundColor '#121F48' -H3FadeBackgroundColor '#AC1F2D' -H3BorderColor 'Black' -H3TextColor 'white' -TableHeaderBackgroundColor '#121F48' -TableHeaderFadeColor '#AC1F2D' -TableHeaderTextColor 'white' -TableBorderColor 'Black'
 # This example generates a report using national colors of the United States to make a professional looking report that is delivered via email
 
 .LINK
