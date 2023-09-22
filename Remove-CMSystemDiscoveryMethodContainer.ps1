@@ -1,0 +1,182 @@
+#Requires -Version 3.0
+Function Remove-CMSystemDiscoveryMethodContainer {
+<#
+.SYNOPSIS
+Remove an Organizational Units (OU) by distinguished name from Active Directory System Discovery components in ConfigMgr
+
+
+.DESCRIPTION
+This cmdlet uses the distinguished name defined in -SearchBase to remove the System Discovery method on an SCCM server
+
+
+.PARAMETER SiteServer
+SCCM Site Server to connect too
+
+.PARAMETER UseSSL
+Creates CIM session to SCCM server using SSL (WinRM over HTTPS)
+
+.PARAMETER SkipCACheck
+Skip Certificate authority trust check on WinRM connnection
+
+.PARAMETER SkipCNCheck
+Skip verifying the CN/subject name on the WinRM certificate
+
+.PARAMETER SkipRevocationCheck
+Skip checking certificate revocation for WinRM connections
+
+.PARAMETER SearchBase
+Define the LDAP container OU path to new domains being added to System Discovery
+
+.PARAMETER Credential
+Enter credentials to authenticate to the SCCM server
+
+
+.EXAMPLE
+Remove-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -SearchBase "DC=domain,DC=com"
+# This example adds the domain.com LDAP search base filter to the domain System Discovery method on the sccm-server.domain.com SCCM server
+
+.EXAMPLE
+Remove-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -UseSSL -SkipCACheck -SkipCNCheck -SkipRevocationCheck -SearchBase "LDAP:\\DC=domain,DC=com"
+# This example adds the domain.com LDAP search base filter to the domain System Discovery method on the sccm-server.domain.com SCCM server
+
+
+.NOTES
+Author: Robert H. Osborne
+Alias: tobor
+Contact: info@osbornerpo.com
+
+
+.INPUTS
+None
+
+
+.OUTPUTS
+None
+#>
+  [CmdletBinding(
+      SupportsShouldProcess=$True,
+      ConfirmImpact="Medium"
+  )]  # End CmdletBinding
+    param(
+        [Parameter(
+            Mandatory=$True,
+            ValueFromPipeline=$False,
+            HelpMessage="Site server where the SMS Provider is installed.")]  # End Parameter
+        [ValidateNotNullOrEmpty()]
+        [String]$SiteServer,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$UseSSL,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$SkipCACheck,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$SkipCNCheck,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$SkipRevocationCheck,
+ 
+        [Parameter(
+            Mandatory=$True,
+            ValueFromPipeline=$True,
+            ValueFromPipelineByPropertyName=$False,
+            HelpMessage="Specify the Active Directory Search Base `nEXAMPLE: DC=domain,DC=com : ")]  # End Parameter
+        [ValidateScript({$_ -like "*DC=*,DC=*"})]
+        [String]$SearchBase,
+
+         [ValidateNotNull()]
+         [System.Management.Automation.PSCredential]
+         [System.Management.Automation.Credential()]
+         $Credential = [System.Management.Automation.PSCredential]::Empty
+    )  # End param
+ 
+BEGIN {
+ 
+    $ComponentName = "SMS_AD_SYSTEM_DISCOVERY_AGENT"   
+    Try {
+ 
+        Write-Verbose -Message "Determining Site Code for Site server: '$($SiteServer)'"
+        $CIMSession = New-CimSession -Credential $Credential -ComputerName $SiteServer -SessionOption (New-CimSessionOption -UseSSL:$UseSSL.IsPresent -SkipCACheck:$SkipCACheck.IsPresent -SkipCNCheck:$SkipCNCheck.IsPresent -SkipRevocationCheck:$SkipReovcationCheck.IsPresent -Verbose:$False) -Verbose:$False
+        $SiteCodeObjects = Get-CimInstance -CimSession $CIMSession -Namespace "Root\SMS" -ClassName SMS_ProviderLocation -ErrorAction Stop
+ 
+        ForEach ($SiteCodeObject in $SiteCodeObjects) {
+ 
+            If ($SiteCodeObject.ProviderForLocalSite -eq $True) {
+ 
+                $SiteCode = $SiteCodeObject.SiteCode
+                Write-Verbose -Message "Site Code: $($SiteCode)"
+                Break
+ 
+            }  # End If
+ 
+        }  # End ForEach
+ 
+    } Catch [System.UnauthorizedAccessException] {
+   
+        Throw "[x] Access denied"
+   
+    } Catch [System.Exception] {
+   
+        Throw "[x] Unable to determine Site Code"
+   
+    }  # End Try Catch Catch
+ 
+    If ($SearchBase -notlike "LDAP://*") {
+   
+        $SearchBase = "LDAP://$($SearchBase)"
+   
+    }  # End If
+
+} PROCESS {
+ 
+    Write-Verbose -Message "Determining the existing containers for selected Discovery Method"
+    Try {
+ 
+        $DiscoveryContainerList = New-Object -TypeName System.Collections.ArrayList
+        $DiscoveryComponent = Get-WmiObject -Class SMS_SCI_Component -Namespace "Root\SMS\Site_$($SiteCode)" -ComputerName $SiteServer -Filter "ComponentName like '$($ComponentName)'" -Credential $Credential -ErrorAction Stop -Verbose:$False
+        $DiscoveryPropListADContainer = $DiscoveryComponent.PropLists | Where-Object -FilterScript { $_.PropertyListName -like "AD Containers" }
+ 
+    } Catch [System.Exception] {
+ 
+        Throw "[x] Unable to determine existing discovery method component properties"
+ 
+    }  # End Catch
+ 
+    Try {
+    
+       Write-Verbose -Message "Attempting to save changes made to the $($ComponentName) component PropList"
+       $LdapLocations = ($DiscoveryPropListADContainer.Values | Select-String -Pattern "LDAP:\\*" | Out-String).Trim().Split([System.Environment]::NewLine) | Where-Object -FilterScript { $_ -notlike $SearchBase -and $_ -notlike "" }
+       $DiscoveryContainerList.AddRange(@($($LdapLocations | ForEach-Object { $_; 0; 1} ))))
+       $DiscoveryPropListADContainer.Values = $DiscoveryContainerList
+       If ($PSCmdlet.ShouldProcess($DiscoveryComponent.Put())) {
+
+           $DiscoveryComponent.Put() | Out-Null
+
+        }  # End If
+
+    } Catch {
+
+          Throw "[x] Unable to save changes made to $($ComponentName) component"
+
+    }  # End Try Catch
+    
+} END {
+
+     If ($CIMSession) {
+     
+        Remove-CimSession -CimSession $CIMSession -Confirm:$False -WhatIf:$False -Verbose:$False
+
+     }  # End If
+
+} # End END
+ 
+}  # End Function Remove-CMSystemDiscoveryMethodContainer
