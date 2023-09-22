@@ -1,4 +1,5 @@
 #Requires -Version 3.0
+Function Add-CMSystemDiscoveryMethodContainer {
 <#
 .SYNOPSIS
 Import Organizational Units (OU) defined by their distinguished name to an Active Directory System Discovery components in ConfigMgr
@@ -49,13 +50,12 @@ Contact: info@osbornerpo.com
 
 
 .INPUTS
-System.String
+None
 
 
 .OUTPUTS
-PSCustomObject
+None
 #>
-Function Add-CMSystemDiscoveryMethodContainer {
   [CmdletBinding(
       SupportsShouldProcess=$True,
       ConfirmImpact="Medium"
