@@ -37,6 +37,7 @@ This repository contains a collection of PowerShell cmdlets that are useful in u
 - **Install-WinSCP.ps1** (*Install or update WinSCP after verifying checksum*)
 - **Install-WinSCPNETAssembly.ps1** (*Download the WinSCP DLL required for writing PowerShell scripts with NET assembly. Checksum gets verified*)
 - **Invoke-MissingUpdateInstallation.ps1** (*Installs SCCM approved missing updates ona device*)
+- **Remove-CMSystemDiscoveryMethodContainer** (*Removes LDAP containers from query on the SCCM servers system discovery filter*)
 - **Remove-WindowsUpdate.ps1** (*Uninstall a Windows Update by KB number on a remote or local device*)
 - **Repair-WindowsUpdate.ps1** (*Stops Windows Update related services and renames directory locations which fixes 90% of all update issues in my experience*)
 - **Reset-SccmAgent.ps1** (*Delete the SCCM cache files and restart the service*)
