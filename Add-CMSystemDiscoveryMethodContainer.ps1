@@ -1,3 +1,4 @@
+#Requires -Version 3.0
 <#
 .SYNOPSIS
 Import Organizational Units (OU) defined by their distinguished name to an Active Directory System Discovery components in ConfigMgr
@@ -5,12 +6,6 @@ Import Organizational Units (OU) defined by their distinguished name to an Activ
 
 .DESCRIPTION
 This cmdlet uses the distinguished name defined in -SearchBase to the System Discovery method on an SCCM server. Existing containers for the specified Discovery Method will be preserved. If a container is already present, it will not be added again.
-
-
-.NOTES
-Author: Robert Osborne
-Contact: rosborne@osbornerpo.com
-Company: OsbornePro LLC.
 
 
 .PARAMETER SiteServer
@@ -45,6 +40,12 @@ Add-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -SearchB
 .EXAMPLE
 Add-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -UseSSL -SkipCACheck -SkipCNCheck -SkipRevocationCheck -SearchBase "LDAP:\\DC=domain,DC=com"
 # This example adds the domain.com LDAP search base filter to the domain System Discovery method on the sccm-server.domain.com SCCM server
+
+
+.NOTES
+Author: Robert H. Osborne
+Alias: tobor
+Contact: info@osbornerpo.com
 
 
 .INPUTS
