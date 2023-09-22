@@ -16,14 +16,26 @@ Company: OsbornePro LLC.
 .PARAMETER SiteServer
 SCCM Site Server to connect too
 
-.PARAMETER SearchBase
-Define the LDAP container OU path to new domains being added to System Discovery
-
 .PARAMETER UseSSL
 Creates CIM session to SCCM server using SSL (WinRM over HTTPS)
 
+.PARAMETER SkipCACheck
+Skip Certificate authority trust check on WinRM connnection
+
+.PARAMETER SkipCNCheck
+Skip verifying the CN/subject name on the WinRM certificate
+
+.PARAMETER SkipRevocationCheck
+Skip checking certificate revocation for WinRM connections
+
+.PARAMETER SearchBase
+Define the LDAP container OU path to new domains being added to System Discovery
+
 .PARAMETER RestartService
 Tells the SCCM server to restart the System Discovery service after adding new containers to search for
+
+.PARAMETER Credential
+Enter credentials to authenticate to the SCCM server
 
 
 .EXAMPLE
@@ -31,7 +43,7 @@ Add-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -SearchB
 # This example adds the domain.com LDAP search base filter to the domain System Discovery method on the sccm-server.domain.com SCCM server
 
 .EXAMPLE
-Add-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -SearchBase "LDAP:\\DC=domain,DC=com"
+Add-CMSystemDiscoveryMethodContainer -SiteServer sccm-server.domain.com -UseSSL -SkipCACheck -SkipCNCheck -SkipRevocationCheck -SearchBase "LDAP:\\DC=domain,DC=com"
 # This example adds the domain.com LDAP search base filter to the domain System Discovery method on the sccm-server.domain.com SCCM server
 
 
@@ -43,15 +55,37 @@ System.String
 PSCustomObject
 #>
 Function Add-CMSystemDiscoveryMethodContainer {
-[CmdletBinding(SupportsShouldProcess=$True)]
+  [CmdletBinding(
+      SupportsShouldProcess=$True,
+      ConfirmImpact="Medium"
+  )]  # End CmdletBinding
     param(
         [Parameter(
             Mandatory=$True,
             ValueFromPipeline=$False,
             HelpMessage="Site server where the SMS Provider is installed.")]  # End Parameter
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({Test-Connection -ComputerName $_ -Count 1 -Quiet})]
         [String]$SiteServer,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$UseSSL,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$SkipCACheck,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$SkipCNCheck,
+        
+        [Parameter(
+            Mandatory=$False
+        )]  # End Parameter
+        [Switch]$SkipRevocationCheck,
  
         [Parameter(
             Mandatory=$True,
@@ -64,30 +98,21 @@ Function Add-CMSystemDiscoveryMethodContainer {
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
-        [Switch][Bool]$UseSSL,
-        
-        [Parameter(
-            Mandatory=$False
-        )]  # End Parameter
-        [Switch][Bool]$RestartService
-)  # End param
+        [Switch]$RestartService
+
+         [ValidateNotNull()]
+         [System.Management.Automation.PSCredential]
+         [System.Management.Automation.Credential()]
+         $Credential = [System.Management.Automation.PSCredential]::Empty
+    )  # End param
  
 BEGIN {
  
-    $ComponentName = "SMS_AD_SYSTEM_DISCOVERY_AGENT"
-    
-    $SSL = $False
-    If ($UseSSL.IsPresent) {
-    
-      Write-Verbose "Utiziling an SSL encrypted CIM session"
-      $SSL = $True
-    
-    }  # End If
-    
+    $ComponentName = "SMS_AD_SYSTEM_DISCOVERY_AGENT"   
     Try {
  
         Write-Verbose -Message "Determining Site Code for Site server: '$($SiteServer)'"
-        $CIMSession = New-CimSession -Credential $Cred -ComputerName $SiteServer -SessionOption (New-CimSessionOption -UseSsl:$SSL)
+        $CIMSession = New-CimSession -Credential $Credential -ComputerName $SiteServer -SessionOption (New-CimSessionOption -UseSSL:$UseSSL.IsPresent -SkipCACheck:$SkipCACheck.IsPresent -SkipCNCheck:$SkipCNCheck.IsPresent -SkipRevocationCheck:$SkipReovcationCheck.IsPresent -Verbose:$False) -Verbose:$False
         $SiteCodeObjects = Get-CimInstance -CimSession $CIMSession -Namespace "Root\SMS" -ClassName SMS_ProviderLocation -ErrorAction Stop
  
         ForEach ($SiteCodeObject in $SiteCodeObjects) {
@@ -95,7 +120,7 @@ BEGIN {
             If ($SiteCodeObject.ProviderForLocalSite -eq $True) {
  
                 $SiteCode = $SiteCodeObject.SiteCode
-                Write-Verbose "Site Code: $($SiteCode)"
+                Write-Verbose -Message "Site Code: $($SiteCode)"
                 Break
  
             }  # End If
@@ -128,7 +153,7 @@ BEGIN {
  
     } Catch [System.Exception] {
  
-        Write-Warning "$($_.Exception.Message). Line: $($_.InvocationInfo.ScriptLineNumber)"
+        Write-Warning -Message "$($_.Exception.Message). Line: $($_.InvocationInfo.ScriptLineNumber)"
         Break
    
     }  #  End Try Catch
@@ -146,7 +171,7 @@ BEGIN {
     Try {
  
         $DiscoveryContainerList = New-Object -TypeName System.Collections.ArrayList
-        $DiscoveryComponent = Get-WmiObject -Class SMS_SCI_Component -Namespace "root\SMS\site_$($SiteCode)" -ComputerName $SiteServer -Filter "ComponentName like '$($ComponentName)'" -Credential $Cred -ErrorAction Stop
+        $DiscoveryComponent = Get-WmiObject -Class SMS_SCI_Component -Namespace "Root\SMS\Site_$($SiteCode)" -ComputerName $SiteServer -Filter "ComponentName like '$($ComponentName)'" -Credential $Credential -ErrorAction Stop -Verbose:$False
         $DiscoveryPropListADContainer = $DiscoveryComponent.PropLists | Where-Object -FilterScript { $_.PropertyListName -like "AD Containers" }
  
         If ($DiscoveryPropListADContainer.PropertyListName -eq "AD Containers") {
@@ -173,27 +198,28 @@ BEGIN {
  
         If ($ContainerItem.DistinguishedName -notin $DiscoveryContainerList) {
  
-            Write-Verbose "Adding new container item $($ContainerItem.DistinguishedName)"
-            $Global:NewDomains = 1
+            Write-Verbose -Message "Adding new container item $($ContainerItem.DistinguishedName)"
             $DiscoveryContainerList.AddRange(@($ContainerItem.DistinguishedName, $OptionTable[$ContainerItem.Recursive], $OptionTable[$ContainerItem.Group])) | Out-Null
  
         } Else {
  
-            Write-Verbose "Detected duplicate container object: $($ContainerItem.DistinguishedName)"
+            Write-Verbose -Message "Detected duplicate container object: $($ContainerItem.DistinguishedName)"
  
         }  # End If Else
  
     }  # End ForEach
  
-    Write-Verbose "Attempting to save changes made to the $($ComponentName) component PropList"
+    Write-Verbose -Message "Attempting to save changes made to the $($ComponentName) component PropList"
     Try {
  
         $DiscoveryPropListADContainer.Values = $DiscoveryContainerList
         $DiscoveryComponent.PropLists = $DiscoveryPropListADContainer
-        $DiscoveryComponent.Put() | Out-Null
-        $LdapLocations = ($DiscoveryPropListADContainer.Values | Select-String -Pattern "LDAP:\\*" | Out-String).Trim().Split([System.Environment]::NewLine)
-       
- 
+        If ($PSCmdlet.ShouldProcess($DiscoveryComponent, '$DiscoveryComponent.Put()')) {
+        
+            $DiscoveryComponent.Put() | Out-Null
+
+        }  # End If
+
     } Catch [System.Exception] {
  
         Throw "[x] Unable to save changes made to $($ComponentName) component"
@@ -203,12 +229,12 @@ BEGIN {
  
     If ($RestartService.IsPresent) {
     
-        Write-Verbose "Restarting the SMS_SITE_COMPONENT_MANAGER service"
+        Write-Verbose -Message "Restarting the SMS_SITE_COMPONENT_MANAGER service"
         Try {
  
-            Write-Output "[*] Restarting the SMS_SITE_COMPONENT_MANAGER service on $SiteServer"
-            Get-CimInstance -CimSession $CIMSession -ClassName Win32_Service -Filter 'Name = "SMS_SITE_COMPONENT_MANAGER"' | Invoke-CimMethod -MethodName StopService
-            Get-CimInstance -CimSession $CIMSession -ClassName Win32_Service -Filter 'Name = "SMS_SITE_COMPONENT_MANAGER"' | Invoke-CimMethod -MethodName StartService
+            Write-Output -InputObject "[*] Restarting the SMS_SITE_COMPONENT_MANAGER service on $SiteServer"
+            Get-CimInstance -CimSession $CIMSession -ClassName Win32_Service -Filter 'Name = "SMS_SITE_COMPONENT_MANAGER"' -Verbose:$False | Invoke-CimMethod -MethodName StopService -WhatIf:$False -Verbose:$False | Out-Null
+            Get-CimInstance -CimSession $CIMSession -ClassName Win32_Service -Filter 'Name = "SMS_SITE_COMPONENT_MANAGER"' -Verbose:$False | Invoke-CimMethod -MethodName StartService -WhatIf:$False -Verbose:$False | Out-Null
    
         } Catch [System.Exception] {
     
@@ -220,9 +246,13 @@ BEGIN {
     }  # End If
     
 } END {
- 
-    Remove-CimSession -CimSession $CIMSession -Confirm:$False
- 
+
+     If ($CIMSession) {
+     
+        Remove-CimSession -CimSession $CIMSession -Confirm:$False -WhatIf:$False -Verbose:$False
+
+     }  # End If
+
 } # End END
  
 }  # End Function Add-CMSystemDiscoveryMethodContainer
