@@ -666,18 +666,18 @@ System.Object[]
                 "*20348.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2022" -Force -WhatIf:$False }
                 "17763.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2019, Windows 10 1809" -Force -WhatIf:$False }
                 "*14393.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2016, Windows 10 1607" -Force -WhatIf:$False }
-                "*6.3.9600*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2012 R2" -Force -WhatIf:$False }
-                "*6.2.9200*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2012" -Force -WhatIf:$False }
-                "*6.1.7601*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2008 R2" -Force -WhatIf:$False }
-                "*22621.2134*" { $OSVersion = "Windows 11 22H2"; $OperatingSystem = "Windows 11" }
-                "*22000.2295*" { $OSVersion = "Windows 11 21H2"; $OperatingSystem = "Windows 11" }
-                "*19045.3324*" { $OSVersion = "Windows 10 22H2"; $OperatingSystem = "Windows 10" }
-                "*19044.3324*" { $OSVersion = "Windows 10 21H2"; $OperatingSystem = "Windows 10" }
-                "*10240.20107*" { $OSVersion = "Windows 10 1507"; $OperatingSystem = "Windows 10" }
+                "*6.3.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2012 R2" -Force -WhatIf:$False }
+                "*6.2.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2012" -Force -WhatIf:$False }
+                "*6.1.*" { Set-Variable -Name OperatingSystem,OSVersion -Value "Windows Server 2008 R2" -Force -WhatIf:$False }
+                "*22621.*" { $OSVersion = "Windows 11 22H2"; $OperatingSystem = "Windows 11" }
+                "*22000.*" { $OSVersion = "Windows 11 21H2"; $OperatingSystem = "Windows 11" }
+                "*19045.*" { $OSVersion = "Windows 10 22H2"; $OperatingSystem = "Windows 10" }
+                "*19044.*" { $OSVersion = "Windows 10 21H2"; $OperatingSystem = "Windows 10" }
+                "*10240.*" { $OSVersion = "Windows 10 1507"; $OperatingSystem = "Windows 10" }
                 "4.*" { $OSVersion = ".NET Framework $OSBuild" }
                 "3.*" { $OSVersion = ".NET Framework $OSBuild" }
                 "2.*" { $OSVersion = ".NET Framework $OSBuild" }
-                Default { $OSVersion = $OSBuild }
+                Default { $OSVersion = $OSBuild 
 
             }  # End Switch
 
