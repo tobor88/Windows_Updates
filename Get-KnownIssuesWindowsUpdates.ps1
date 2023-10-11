@@ -690,8 +690,8 @@ System.Object[]
 
             If (!($NoIssuesKnown)) {
                 
-                $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern '<tbody>(.|\n)*?<\/tbody>').Matches.Value
-                $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
+                $Match = ($KBReleaseNotes.RawContent | Select-String -Pattern 'Known issues in this update</h(\d)>(.|\n)*?<tbody>(.|\n)*?<\/tbody>' -AllMatches).Matches.Value
+                $PTags = ($Match | Select-String -Pattern '<p>(.|\n)*?<\/p>' -AllMatches).Matches.Value | Where-Object -FilterScript { $_ -notlike '<p></p>' -and $_ -notmatch ">Symptom<" -and $_ -notmatch ">Workaround<" -and $_ -notmatch ">Registry key function</b>" -and $_ -notmatch ">Next step<" -and $_ -notlike '<p></p>' -and $_ -notlike "*>Symptom<*" -and $_ -notlike "*>Workaround<*" -and $_ -notlike "*>Next step<*" }
                 $Issue = $PTags[0].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ') + $(If ($PTags[1] -like "*>Note*") { "<br>$($PTags[1].Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' '))" } )
                 $Workaround = ($PTags | Where-Object -FilterScript { $_ -notlike $PTags[0]}).Replace('<p>', '').Replace('</p>', '').Replace('<br>', ' ')
                 If ($PTags[1] -like "*>Note*") { 
