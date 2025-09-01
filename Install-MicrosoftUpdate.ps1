@@ -1,5 +1,3 @@
-#Requires -Version 2
-#Requires -RunAsAdministrator
 Function Install-MicrosoftUpdate {
 <#
 .SYNOPSIS
@@ -25,17 +23,14 @@ Include hidden updates in the search (only relevant when -KBId is not supplied).
 .PARAMETER ShowInstalled
 Return installed updates instead of pending ones (again, only when -KBId is not supplied).
 
-.PARAMETER IncludeDriver
-Include driver‑type updates.  When omitted driver updates are filtered out (CategoryID 2).
-
 
 .EXAMPLE
 PS> Install-MicrosoftUpdate -KBId KB5006670,KB5008601
 # This example installs the two specified updates.
 
 .EXAMPLE
-PS> Install-MicrosoftUpdate -IncludeDriver
-# This example installs all pending updates, including drivers.
+PS> Install-MicrosoftUpdate -IncludeHidden
+# This example installs all pending updates, including hidden updates.
 
 
 .NOTES
@@ -55,9 +50,11 @@ https://osbornepro.com
             ValueFromRemainingArguments = $True
         )]  # End Parameter
         [String[]]$KBId,
+
         [Switch]$DownloadOnly,
+
         [Switch]$IncludeHidden,
-        [Switch]$ShowInstalled,
+
         [Switch]$IncludeDriver
     )  # End param
     
@@ -79,18 +76,9 @@ https://osbornepro.com
 
         } Else {
 
-            If ($ShowInstalled.IsPresent) {
-            
-                $BaseQuery = "IsInstalled=1 and Type='Software'"
-                
-            } Else {
-            
-                $BaseQuery = "IsInstalled=0 and Type='Software'"
-                If ($IncludeHidden.IsPresent) { $BaseQuery += " and IsHidden=1" }
-                If (-not $IncludeDriver.IsPresent) { $BaseQuery += " and CategoryIDs not contains 2" }
-                   
-            }  # End If Else
-            
+            $BaseQuery = "IsInstalled=0 and Type='Software'"
+            $BaseQuery += If ($IncludeHidden.IsPresent) { " and IsHidden=1" }
+
         }  # End If Else
 
         Write-Debug -Message "Windows Update query: $BaseQuery"
@@ -148,4 +136,3 @@ https://osbornepro.com
     }  # End Try Catch Finally
     
 }  # End Function Install-MicrosoftUpdate
-
