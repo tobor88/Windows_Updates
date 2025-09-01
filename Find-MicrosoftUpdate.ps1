@@ -1,5 +1,3 @@
-#Requires -Version 2
-#Requires -RunAsAdministrator
 Function Find-MicrosoftUpdate {
 <#
 .SYNOPSIS
@@ -44,6 +42,7 @@ Contact: rosborne@osbornepro.com
 .LINK
 https://osbornepro.com
 #>
+[OutputType([PSCustomObject])]
 [CmdletBinding()]
     param (
         [Switch]$IncludeHidden,
@@ -55,39 +54,57 @@ https://osbornepro.com
     $InformationPreference = "Continue"
     Try {
     
-      If ($ShowInstalled) {
-          $BaseQuery = "IsInstalled=1 and Type='Software'"
-      } Else {
-          $HiddenFlag = 0
-          If ($IncludeHidden) { $HiddenFlag = 1 }
-          $BaseQuery = "IsInstalled=0 and Type='Software' and IsHidden=$($HiddenFlag)"
-      }  # End If Else
+        $RequiredService = Get-Service -Name wuauserv -ErrorAction Stop
+        If ($RequiredService.Status -ne "Running") {
+
+            Start-Service -Name wuauserv -Confirm:$False -ErrorAction Stop
+
+        }  # End If
+
+        If ($ShowInstalled) {
+
+            $BaseQuery = "IsInstalled=1 and Type='Software'"
+
+        } Else {
+
+            If ($IncludeHidden) { 
+
+                $BaseQuery = $BaseQuery + " and IsHidden=1"
+
+            }  # End If
+            
+        }  # End If Else
+        
+        If (!($IncludeDriver)) {
+
+            # Exclude driver categories – the CategoryID for drivers is 2
+            $BaseQuery = "$BaseQuery and CategoryIDs not contains 2"
+
+        }  # End If
   
-      If (!($IncludeDriver)) {
-          # Exclude driver categories – the CategoryID for drivers is 2
-          $BaseQuery = "$BaseQuery and CategoryIDs <> 2"
-      }  # End If
-  
-      Try {
+        Try {
       
-          $Searcher = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher()
-          $Result = $Searcher.Search($BaseQuery)
-          If ($Result.Updates.Count -eq 0) {
-              Write-Information -MessageData "No matching updates were found."
-              Return
-          }  # End If
-          # Return the raw UpdateCollection so callers can pipe it further
-          $Result.Updates
+            Write-Debug -Message "Search query string: $($BaseQuery)"
+            $Searcher = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher()
+            $Result = $Searcher.Search($BaseQuery)
+            If ($Result.Updates.Count -eq 0) {
+
+                Write-Information -MessageData "No matching updates were found."
+                Return
+
+            }  # End If
+            $Result.Updates
           
-      } Catch {
+        } Catch {
 
-          Throw "Failed to query Windows Update: $($Error[0].Exception.Message)"
+            Throw "Failed to query Windows Update: $($Error[0].Exception.Message)"
 
-      }  # End Try Catch
+        }  # End Try Catch
 
-  } Finally {
+    } Finally {
   
-      $InformationPreference = $InfoPref
+        $InformationPreference = $InfoPref
       
-  }  # End Try Finally
-  }
+    }  # End Try Finally
+
+}  # End Function Find-MicrosoftUpdate
