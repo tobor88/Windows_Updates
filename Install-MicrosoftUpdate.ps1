@@ -108,7 +108,7 @@ https://osbornepro.com
 
         $Downloader = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateDownloader()
         $Downloader.Updates = $UpdatesToInstall
-        Write-Information "Downloading $($UpdatesToInstall.Count) update(s)…"
+        Write-Information -MessageData "Downloading $($UpdatesToInstall.Count) update(s)"
         $DownloadResult = $Downloader.Download()
         If ($DownloadResult.ResultCode -ne 2) {   # 2 = Succeeded
             Throw "Download failed (ResultCode=$($DownloadResult.ResultCode))."
@@ -119,7 +119,7 @@ https://osbornepro.com
 
             $Installer = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateInstaller()
             $Installer.Updates = $UpdatesToInstall
-            Write-Information "Installing $($UpdatesToInstall.Count) update(s)…"
+            Write-Information -MessageData "Installing $($UpdatesToInstall.Count) update(s)"
             $InstallResult = $Installer.Install()
             If ($InstallResult.ResultCode -ne 2) {
                 Throw "Installation failed (ResultCode=$($InstallResult.ResultCode))."
@@ -139,7 +139,7 @@ https://osbornepro.com
     
         $HR  = $_.Exception.HResult
         $Msg = $_.Exception.Message
-        Throw "Failed to install updates (HRESULT: 0x{0:X8}) – {1}" -f $HR, $Msg)
+        Throw "Failed to install updates (HRESULT: 0x{0:X8}) – {1}" -f $HR, $Msg
     
     } Finally {
     
@@ -148,3 +148,4 @@ https://osbornepro.com
     }  # End Try Catch Finally
     
 }  # End Function Install-MicrosoftUpdate
+
