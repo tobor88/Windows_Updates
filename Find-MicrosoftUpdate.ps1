@@ -56,31 +56,20 @@ https://osbornepro.com
     
         $RequiredService = Get-Service -Name wuauserv -ErrorAction Stop
         If ($RequiredService.Status -ne "Running") {
-
             Start-Service -Name wuauserv -Confirm:$False -ErrorAction Stop
-
         }  # End If
-
-        If ($ShowInstalled) {
-
+        
+        If ($ShowInstalled.IsPresent) {
             $BaseQuery = "IsInstalled=1 and Type='Software'"
-
         } Else {
+            $BaseQuery = "IsInstalled=0 and Type='Software'"
+            $BaseQuery += If ($IncludeHidden.IsPresent) { " and IsHidden=1" }
+            If (!($IncludeDriver.IsPresent)) {
 
-            If ($IncludeHidden) { 
-
-                $BaseQuery = $BaseQuery + " and IsHidden=1"
+                $BaseQuery = "$BaseQuery and CategoryIDs not contains 2" # Exclude driver categories – the CategoryID for drivers is 2
 
             }  # End If
-            
         }  # End If Else
-        
-        If (!($IncludeDriver)) {
-
-            # Exclude driver categories – the CategoryID for drivers is 2
-            $BaseQuery = "$BaseQuery and CategoryIDs not contains 2"
-
-        }  # End If
   
         Try {
       
@@ -90,10 +79,21 @@ https://osbornepro.com
             If ($Result.Updates.Count -eq 0) {
 
                 Write-Information -MessageData "No matching updates were found."
-                Return
+                Return @()
 
             }  # End If
-            $Result.Updates
+            $Result.Updates | ForEach-Object -Process {
+                [PSCustomObject]@{
+                    Title           = $_.Title
+                    KBIds           = ($_?.KBArticleIDs -join ', ')
+                    Description     = $_.Description
+                    IsInstalled     = $_.IsInstalled
+                    IsHidden        = $_.IsHidden
+                    Categories      = ($_?.Categories | ForEach-Object -Process { $_.Name }) -join ', '
+                    ReleaseDate     = $_.LastDeploymentChangeTime
+                    RawUpdateObject = $_   # for power‑users who need the full COM object
+                }  # End PSCustomObject
+            }  # End ForEach-Object
           
         } Catch {
 
