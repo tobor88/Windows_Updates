@@ -1,6 +1,6 @@
 #Requires -Version 2
 #Requires -RunAsAdministrator
-function Install-Microsoftupdate {
+Function Install-Microsoftupdate {
 <#
 .SYNOPSIS
 Downloads and installs pending Microsoft Windows updates.
@@ -23,7 +23,7 @@ Include driver‑type updates in the search/install process.
 
 
 .EXAMPLE
-PS> Install-Microsoftupdate -LogPath "D:\WinUpdates" -IncludeDriver
+PS> Install-MicrosoftUpdate -LogPath "D:\WinUpdates" -IncludeDriver
 # This example finds Microsoft updates and driver updates discovered in the Microsoft catalog and installs them logging results to the D:\WindUpdates directory
 
 
@@ -36,7 +36,7 @@ Contact: rosborne@osbornepro.com
 .LINK
 https://osbornepro.com
 #>
-[OutputType()]
+[OutputType([PSCustomObject])]
 [CmdletBinding()]
     param (
         [Parameter(
@@ -44,7 +44,6 @@ https://osbornepro.com
             Mandatory=$False
         )]  # End Parameter
         [String]$LogPath = "C:\Windows\Temp\$($env:COMPUTERNAME)",
-        
         [Switch]$IncludeHidden,
         [Switch]$IncludeDriver
     )  # End param
