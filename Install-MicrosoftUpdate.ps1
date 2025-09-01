@@ -1,30 +1,41 @@
 #Requires -Version 2
 #Requires -RunAsAdministrator
-Function Install-Microsoftupdate {
+Function Install-MicrosoftUpdate {
 <#
 .SYNOPSIS
-Downloads and installs pending Microsoft Windows updates.
+Installs Windows updates. Supply 1 or more KB IDs or it will install all pending updates
 
 
 .DESCRIPTION
-Uses `Find‑Microsoftupdate` internally, then downloads, installs and writes a concise text report.
-The `-IncludeDriver` switch lets you specify whether driver updates are included in the operation.
+This cmdlet searches for matching updates, downloads any that are not already cached and then installs them.  
+This works on PowerShell 2.0+ but requires elevation.
 
 
-.PARAMETER LogPath
-Folder where the plain‑text log file will be written. 
-Default: "C:\Windows\Temp\<computername>".
+.PARAMETER KBId
+One or more KB article identifiers (e.g. KB5006670). 
+If this parameter is supplied the function looks up only those updates;
+otherwise it falls back to the broader search controlled by the other switches.
+
+.PARAMETER DownloadOnly
+This parameter tells the cmdlet to download/stage the updates but does NOT install them.
 
 .PARAMETER IncludeHidden
-Include hidden updates (passed through to `Find‑Microsoftupdate`).
+Include hidden updates in the search (only relevant when -KBId is not supplied).
+
+.PARAMETER ShowInstalled
+Return installed updates instead of pending ones (again, only when -KBId is not supplied).
 
 .PARAMETER IncludeDriver
-Include driver‑type updates in the search/install process.
+Include driver‑type updates.  When omitted driver updates are filtered out (CategoryID 2).
 
 
 .EXAMPLE
-PS> Install-MicrosoftUpdate -LogPath "D:\WinUpdates" -IncludeDriver
-# This example finds Microsoft updates and driver updates discovered in the Microsoft catalog and installs them logging results to the D:\WindUpdates directory
+PS> Install-MicrosoftUpdate -KBId KB5006670,KB5008601
+# This example installs the two specified updates.
+
+.EXAMPLE
+PS> Install-MicrosoftUpdate -IncludeDriver
+# This example installs all pending updates, including drivers.
 
 
 .NOTES
@@ -40,99 +51,100 @@ https://osbornepro.com
 [CmdletBinding()]
     param (
         [Parameter(
-            Position=0,
-            Mandatory=$False
+            Position = 0,
+            ValueFromRemainingArguments = $True
         )]  # End Parameter
-        [String]$LogPath = "C:\Windows\Temp\$($env:COMPUTERNAME)",
+        [String[]]$KBId,
+        [Switch]$DownloadOnly,
         [Switch]$IncludeHidden,
+        [Switch]$ShowInstalled,
         [Switch]$IncludeDriver
     )  # End param
-
-    # --------------------------------------------------------------
-    # 1.) Discover pending updates (re‑use Find‑Microsoftupdate)
-    # --------------------------------------------------------------
-    $Updates = Find-Microsoftupdate -IncludeHidden:$IncludeHidden -IncludeDriver:$IncludeDriver
-    If (-not $Updates -or $Updates.Count -eq 0) {
     
-        Write-Information -MessageData "$($env:COMPUTERNAME) is already up‑to‑date."
-        Return
+    $InfoPref = $InformationPreference
+    $InformationPreference = 'Continue'
+    Try {
+    
+        $WuService = Get-Service -Name wuauserv -ErrorAction Stop
+        If ($WuService.Status -ne 'Running') {
+            Start-Service -Name wuauserv -Confirm:$False -ErrorAction Stop
+        }  # End If
         
-    }  # End If
+        If ($KBId) {
 
-    # --------------------------------------------------------------
-    # 2.) Prepare logging
-    # --------------------------------------------------------------
-    $Today         = Get-Date
-    $FormattedDate = $Today.ToString('MM-dd-yyyy')
-    $LogFolder     = Join-Path -Path $LogPath -ChildPath $env:COMPUTERNAME
-    $ReportFile    = Join-Path -Path $LogFolder -ChildPath "$($FormattedDate)_$($env:COMPUTERNAME)_Update_Report.log"
-    New-Item -Path $LogFolder -ItemType Directory -Force | Out-Null
-    If (Test-Path -Path $ReportFile) {
-        Rename-Item -Path $ReportFile -NewName ("$ReportFile.old") -Force
-    }  # End If
+            $KbClauses = $KBId | ForEach-Object -Process {
+                "KBArticleIDs='$($_)'"
+            }  # End ForEach-Object
+            $BaseQuery = '(' + ($KbClauses -join ' OR ') + ')'
 
-    @"
-#===================================================================#
-#                           Update Report                           #
-#===================================================================#
-Computer Hostname      : $env:COMPUTERNAME
-Computer Domain        : $((Get-CimInstance -ClassName Win32_ComputerSystem).Domain)
-Creation Date          : $Today
-Report Directory       : $LogFolder
-Executing User         : $env:USERNAME
-Executing Users Domain : $env:USERDOMAIN
-Working Directory      : $PWD
-PS Version             : $($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor).$($PSVersionTable.PSVersion.Path)
+        } Else {
 
----------------------------------------------------------------------
-AVAILABLE UPDATES
----------------------------------------------------------------------
-"@ | Set-Content -Path $ReportFile -Encoding UTF8
+            If ($ShowInstalled.IsPresent) {
+            
+                $BaseQuery = "IsInstalled=1 and Type='Software'"
+                
+            } Else {
+            
+                $BaseQuery = "IsInstalled=0 and Type='Software'"
+                If ($IncludeHidden.IsPresent) { $BaseQuery += " and IsHidden=1" }
+                If (-not $IncludeDriver.IsPresent) { $BaseQuery += " and CategoryIDs not contains 2" }
+                   
+            }  # End If Else
+            
+        }  # End If Else
 
-    # --------------------------------------------------------------
-    # 3.) Download each update
-    # --------------------------------------------------------------
-    $Session    = New-Object -ComObject Microsoft.Update.Session
-    $Downloader = $Session.CreateUpdateDownloader()
-    $DownloadColl = New-Object -ComObject Microsoft.Update.UpdateColl
+        Write-Debug -Message "Windows Update query: $BaseQuery"
+        $Searcher = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher()
+        $SearchResult = $Searcher.Search($BaseQuery)
+        If ($SearchResult.Updates.Count -eq 0) {
+            Write-Information -MessageData "No matching updates were found."
+            Return
+        }  # End If
 
-    ForEach ($Upd in $Updates) {
-        $DownloadColl.Add($Upd) | Out-Null
-        Add-Content -Path $ReportFile -Value "$($Updates.IndexOf($Upd)+1). Downloading: $($Upd.Title)"
-    }  # End ForEach
+        $UpdatesToInstall = New-Object -ComObject Microsoft.Update.UpdateColl
+        $SearchResult.Updates | ForEach-Object -Process {
+            $UpdatesToInstall.Add($_) | Out-Null
+        }  # End ForEach-Object
 
-    $Downloader.Updates = $DownloadColl
-    $DLResult = $Downloader.Download()
+        $Downloader = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateDownloader()
+        $Downloader.Updates = $UpdatesToInstall
+        Write-Information "Downloading $($UpdatesToInstall.Count) update(s)…"
+        $DownloadResult = $Downloader.Download()
+        If ($DownloadResult.ResultCode -ne 2) {   # 2 = Succeeded
+            Throw "Download failed (ResultCode=$($DownloadResult.ResultCode))."
+        }  # End If
+        $RebootRequired = "No"
 
-    If ($DLResult.HResult -ne 0 -or $DLResult.ResultCode -ne 2) {
-        Write-Warning -Message "One or more downloads failed – see the log for details."
-    }  # End If
+        If (-not $DownloadOnly.IsPresent) {
 
-    # --------------------------------------------------------------
-    # 4.) Install the downloaded updates
-    # --------------------------------------------------------------
-    $Installer = $Session.CreateUpdateInstaller()
-    $Installer.Updates = $DownloadColl
-    $InstResult = $Installer.Install()
+            $Installer = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateInstaller()
+            $Installer.Updates = $UpdatesToInstall
+            Write-Information "Installing $($UpdatesToInstall.Count) update(s)…"
+            $InstallResult = $Installer.Install()
+            If ($InstallResult.ResultCode -ne 2) {
+                Throw "Installation failed (ResultCode=$($InstallResult.ResultCode))."
+            }  # End If
+            $RebootRequired = $InstallResult.RebootRequired
+        }  # End If
 
-    # --------------------------------------------------------------
-    # 5.) Final report
-    # --------------------------------------------------------------
-    Add-Content -Path $ReportFile -Value @"
----------------------------------------------------------------------
-UPDATE INSTALLATION
----------------------------------------------------------------------
-Result Code : $($InstResult.ResultCode)
-HResult     : $($InstResult.HResult)
-"@
-
-    # Summary object returned to the pipeline
-    [PSCustomObject]@{
-        ComputerName   = $env:COMPUTERNAME
-        Date           = $FormattedDate
-        UpdatesFound   = $Updates.Count
-        DownloadResult = $DLResult.ResultCode
-        InstallResult  = $InstResult.ResultCode
-        LogFile        = $ReportFile
-    }
-}
+        $Summary = [PSCustomObject]@{
+            TotalUpdates    = $UpdatesToInstall.Count
+            InstalledKBs    = ($UpdatesToInstall | ForEach-Object -Process { $_.KBArticleIDs -join ', ' })
+            RebootRequired  = $RebootRequired 
+            Timestamp       = Get-Date -Format 'MM-dd-yyyy hh:mm:ss'
+        }  # End PSCustomObject
+        Return $Summary
+        
+    } Catch {
+    
+        $HR  = $_.Exception.HResult
+        $Msg = $_.Exception.Message
+        Throw "Failed to install updates (HRESULT: 0x{0:X8}) – {1}" -f $HR, $Msg)
+    
+    } Finally {
+    
+        $InformationPreference = $InfoPref
+    
+    }  # End Try Catch Finally
+    
+}  # End Function Install-MicrosoftUpdate
